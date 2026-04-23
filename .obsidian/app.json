@@ -1,0 +1,12 @@
+{
+  "userIgnoreFilters": [
+    "/node_modules/",
+    "/\\/vendor\\//",
+    "/\\.next\\//",
+    "/\\/dist\\//",
+    "/\\/build\\//",
+    "/__pycache__/",
+    "/\\.venv\\//",
+    "/\\.git\\//"
+  ]
+}

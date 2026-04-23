@@ -1,0 +1,57 @@
+/*
+ * Wiki callouts — 4 custom callouts for the SecondBrainUltra wiki
+ * Pattern inherited from AgriciDaniel/claude-obsidian.
+ *
+ * Usage inside markdown files:
+ *   > [!contradiction]
+ *   > Two pages claim incompatible things about X (e.g. settlement date,
+ *   > initiative ownership). Link both conflicting pages.
+ *
+ *   > [!gap]
+ *   > Open question or concept cited but not documented.
+ *   > Candidate for a targeted /ingest or /log-decision.
+ *
+ *   > [!stale]
+ *   > Claim in this page may be obsolete.
+ *   > Verify on the next relevant pass.
+ *
+ *   > [!key-insight]
+ *   > Takeaway relevant beyond the local context of this page.
+ *   > Candidate for promotion to knowledge/ or to a rule.
+ *
+ * Obsidian recognizes the callouts even without this snippet (default icon),
+ * but this snippet applies the custom colors and semantic icons.
+ */
+
+.callout[data-callout="contradiction"] {
+  --callout-color: 209, 105, 105;        /* warm red */
+  --callout-icon: lucide-alert-triangle;
+}
+
+.callout[data-callout="gap"] {
+  --callout-color: 220, 220, 170;        /* soft yellow */
+  --callout-icon: lucide-help-circle;
+}
+
+.callout[data-callout="stale"] {
+  --callout-color: 128, 128, 128;        /* gray */
+  --callout-icon: lucide-clock;
+}
+
+.callout[data-callout="key-insight"] {
+  --callout-color: 79, 193, 255;         /* cyan */
+  --callout-icon: lucide-lightbulb;
+}
+
+/*
+ * Folder color-coding in the file explorer (optional, from claude-obsidian).
+ * If you don't like the colors, remove this section.
+ */
+
+.nav-folder-title[data-path="decisions"]           { color: #c586c0; }  /* purple */
+.nav-folder-title[data-path="daily"]               { color: #6a9955; }  /* green */
+.nav-folder-title[data-path="weekly"]              { color: #569cd6; }  /* dark blue */
+.nav-folder-title[data-path="knowledge"]           { color: #dcdcaa; }  /* yellow */
+.nav-folder-title[data-path="people"]              { color: #4fc1ff; }  /* cyan */
+.nav-folder-title[data-path="plans"]               { color: #ce9178; }  /* orange */
+.nav-folder-title[data-path="raw"]                 { color: #808080; opacity: 0.7; }
