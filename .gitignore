@@ -1,0 +1,53 @@
+# SecondBrainUltra — .gitignore
+
+# ---- macOS / OS noise ----
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# ---- Editor / IDE noise ----
+.vscode/
+.idea/
+*.iml
+
+# ---- Obsidian per-machine state (keep config, drop local state) ----
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
+
+# ---- Heavy / binary attachments (keep light graph) ----
+# Markdown, PNG, JPG, SVG are part of the vault (Obsidian assets).
+# Heavy formats are excluded — reference them by path or external link.
+*.pdf
+*.xlsx
+*.xls
+*.pptx
+*.ppt
+*.docx
+*.doc
+*.zip
+*.tar.gz
+*.7z
+*.mp4
+*.mov
+*.webm
+*.mp3
+*.wav
+
+# ---- Secrets / local-only ----
+.env
+.env.*
+*.key
+*.pem
+secrets/
+.claude/settings.local.json
+
+# ---- Generated / transient ----
+lint-report.md     # Regenerated on every `/lint` run — keep local, don't commit.
+
+# ---- Nested git repos (if macro areas are their own repos) ----
+# Uncomment and tweak if a macro area is its own repo that you don't want tracked here:
+# WORK/some-submodule/
+# VENTURES/my-saas/
