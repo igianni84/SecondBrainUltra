@@ -109,10 +109,9 @@ Every issue must have a concrete action. Not "check X" — but "rename X to Y" o
 Overwrite (it's a transient report, not historical).
 
 ### Step 5 — Append to log.md
-```markdown
-## [YYYY-MM-DD HH:MM] lint | wiki health-check
-- N issues found (see lint-report.md)
-- files touched: `lint-report.md`
+Append ONE single line under the current month's header in `log.md` (`## YYYY-MM`, create it if missing):
+```
+- YYYY-MM-DD HH:MM · lint · wiki health-check → {N issues found; see lint-report.md}
 ```
 
 ### Step 6 — Propose actions to the user

@@ -1,17 +1,15 @@
 # Operation Log
 
-> Append-only chronological log of every operation on this wiki.
-> Each slash command (`/daily-log`, `/ingest`, `/log-meeting`, `/log-decision`, `/lint`, `/end-session`, `/weekly-review`, `/new-initiative`) adds an entry here.
+> Lean audit trail of every operation on this wiki — **one line per operation**, not a journal.
+> Each slash command (`/daily-log`, `/ingest`, `/log-meeting`, `/log-decision`, `/lint`, `/new-initiative`, `/weekly-review`, `/end-session`) appends one line under the current month's `## YYYY-MM` header.
 >
-> Format:
+> Format (separator is the middle dot ·):
 > ```
-> ## [YYYY-MM-DD HH:MM] {op} | {target}
-> - bullet describing what changed
-> - files touched: `a.md`, `b.md`
+> - YYYY-MM-DD HH:MM · {op} · {target} → {outcome ≤15 words}
 > ```
+>
+> Compaction: this file keeps only the **current month**. On month rollover, `/end-session` moves concluded months to `log/YYYY-MM.md` (one file per month). The *content* of the work lives in `daily/`, `decisions/`, `knowledge/`, etc. — `log.md` keeps only the mechanical trace (when · what · on what · outcome).
 
-<!-- Newest entries on top. Oldest at the bottom gets rotated to log-archive-YYYY.md when this file exceeds ~5000 lines. -->
+## 2026-01
 
-## [YYYY-MM-DD HH:MM] bootstrap | template baseline
-- Initialized SecondBrainUltra from template.
-- Files touched: scaffold — see `git log` for the full initial commit.
+- 2026-01-15 09:00 · bootstrap · template baseline → initialized SecondBrainUltra from template

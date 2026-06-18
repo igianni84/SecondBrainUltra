@@ -143,7 +143,7 @@ Pattern inherited from [AgriciDaniel/claude-obsidian](https://github.com/AgriciD
 | `/new-initiative` | Scaffolds a new initiative in a macro area |
 | `/weekly-review` | Rolls up daily logs of the week into `weekly/YYYY-Www.md` |
 
-Every operation **appends** a row to `log.md` with prefix `## [YYYY-MM-DD HH:MM] {op} | {target}`.
+Every operation appends **one line** to `log.md` (a lean audit trail, not a journal), in the format `- YYYY-MM-DD HH:MM · {op} · {target} → {outcome}`, under the current month's header `## YYYY-MM`. `log.md` keeps only the current month; `/end-session` archives concluded months to `log/YYYY-MM.md` (one file per month). Details and the compaction rule: `.claude/CLAUDE.md` → "Append to log.md".
 
 ---
 

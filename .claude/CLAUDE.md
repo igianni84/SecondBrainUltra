@@ -240,13 +240,16 @@ Mandatory on every wiki page. Minimum schema per type:
 - People: `firstname-lastname.md` (no spaces)
 
 ### Append to log.md
-Every operation (`/daily-log`, `/ingest`, `/log-meeting`, `/log-decision`, `/lint`, `/end-session`) appends:
+`log.md` is a **lean audit trail, not a journal**. Every operation (`/daily-log`, `/ingest`, `/log-meeting`, `/log-decision`, `/lint`, `/new-initiative`, `/weekly-review`, `/end-session`) appends **exactly one line**, under the current month's header `## YYYY-MM` (create it if missing):
 ```
-## [YYYY-MM-DD HH:MM] {op} | {target}
-- bullet 1
-- bullet 2
-- files touched: `a.md`, `b.md`
+- YYYY-MM-DD HH:MM · {op} · {target} → {outcome ≤15 words}
 ```
+The *content* of the work lives in `daily/`, `decisions/`, `people/`, `knowledge/`, etc. — `log.md` keeps only the mechanical trace (when · what · on what · outcome).
+
+### Compaction (general rule — files distill, they don't accumulate)
+Same principle as `hot.md` ("it's a cache, not a journal"). Applies to files that would otherwise grow unbounded:
+- **`log.md`** keeps only the **current month**. On month rollover, `/end-session` moves concluded-month entries to `log/YYYY-MM.md` (one file per month).
+- **`INDEX.md`** is a **catalog that links, not one that contains**. Chronological sections (daily, raw meetings, articles) keep only the most recent ~10–14 entries with a link + a 1-line gloss; the full history is browsed from the folder. **Never paste the full content of child files** into the index.
 
 ### Updating INDEX.md + sub-index
 Every operation that creates/moves a wiki page **must** update:

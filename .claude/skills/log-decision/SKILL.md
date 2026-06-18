@@ -99,10 +99,9 @@ If a decision supersedes an earlier one, update the old row's status to **supers
 If the decision is strategic or architectural, update `hot.md` (complete overwrite). If purely tactical, you can skip.
 
 ### Step 9 — Append to log.md
-```markdown
-## [YYYY-MM-DD HH:MM] log-decision | {slug}
-- {1 line: what was decided}
-- files touched: `decisions/YYYY-MM-DD-{slug}.md`, [possible superseded], `decisions/INDEX.md`, `INDEX.md`, `hot.md` (if updated)
+Append **a single line** to `log.md` (root), under the current month's header `## YYYY-MM` (create it if the current month's header is missing):
+```
+- YYYY-MM-DD HH:MM · log-decision · {slug} → {what was decided, in brief; +superseded {slug} if applicable}
 ```
 
 ### Step 10 — Connections

@@ -67,10 +67,9 @@ Add a row in the "Active" table:
 A new initiative almost always shifts "Active Threads" in the hot cache. Update `hot.md` (complete overwrite, ~500 words). If the initiative is marginal (e.g. exploration, low priority), you can skip.
 
 ### Step 8 — Append to log.md
-```markdown
-## [YYYY-MM-DD HH:MM] new-initiative | {macro-area}/{slug}
-- created initiative card "{name}"
-- files touched: `{macro-area}/initiatives/{slug}.md`, `{macro-area}/initiatives/INDEX.md`, `hot.md` (if updated)
+Append ONE single line under the current month's header in `log.md` (`## YYYY-MM`, create it if the current month's header is missing):
+```
+- YYYY-MM-DD HH:MM · new-initiative · {target} → created initiative card "{name}"
 ```
 
 ### Step 9 — Final suggestions

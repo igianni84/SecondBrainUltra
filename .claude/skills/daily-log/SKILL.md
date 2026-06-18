@@ -82,12 +82,10 @@ Body in 4–5 sections:
 Format reference: the file itself (first iteration is hand-written). If unsure about tone, read the current one to calibrate.
 
 ### Step 8 — Append to log.md
-Append an entry to `log.md` (root):
+Append **a single line** to `log.md` (root), under the current month's header `## YYYY-MM` (create it if missing — `log.md` holds only the current month):
 
-```markdown
-## [YYYY-MM-DD HH:MM] daily-log | YYYY-MM-DD
-- {1 line: what was logged}
-- files touched: `daily/YYYY-MM-DD.md`, `INDEX.md`, `hot.md`, `log.md`
+```
+- YYYY-MM-DD HH:MM · daily-log · {target} → {outcome ≤15 words}
 ```
 
 ### Step 9 — Confirm to the user
