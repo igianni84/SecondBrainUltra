@@ -79,7 +79,7 @@ Point Obsidian at the folder. The vault is pre-configured (`.obsidian/` is commi
 claude
 ```
 
-Claude reads `CLAUDE.md`, loads `hot.md` via the `SessionStart` hook, and knows your 8 slash commands. Try `/daily-log` at the end of your first day.
+Claude reads `CLAUDE.md`, loads `hot.md` via the `SessionStart` hook, and knows your 8 slash commands. Try `/end-session` when you wrap up your first session — it writes the daily log, commits, and pushes.
 
 ### 5. (Optional) Rename the example macro area
 
@@ -93,8 +93,8 @@ A typical day inside SecondBrainUltra:
 
 1. **Morning**: session starts, Claude auto-reads `hot.md` — you don't need to recap.
 2. **During the day**: you dump raw stuff into `raw/meetings/`, `raw/articles/`, `raw/notes/`. You make decisions and invoke `/log-decision`. You finish meetings and invoke `/log-meeting <path>`.
-3. **Before a break**: `/daily-log` to checkpoint.
-4. **End of day**: `/end-session` wraps everything, commits, pushes.
+3. **Before a break (optional)**: `/daily-log` checkpoints the day's digest *without* committing — you rarely need it standalone, since `/end-session` already runs it.
+4. **End of each work session**: `/end-session` wraps the session — runs `/daily-log`, updates `log.md`, commits, and pushes. Run it whenever you close Claude Code; **several times a day is normal**, not just once at "end of day".
 5. **End of week**: `/weekly-review` distills the week, flags trends.
 6. **Every so often**: `/lint` runs a health check (orphans, broken wikilinks, stale seeds, open `[!contradiction]` / `[!gap]` callouts).
 

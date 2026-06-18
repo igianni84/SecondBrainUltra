@@ -135,7 +135,7 @@ Pattern inherited from [AgriciDaniel/claude-obsidian](https://github.com/AgriciD
 
 | Command | What it does |
 |---|---|
-| `/daily-log` | Creates `daily/YYYY-MM-DD.md` from the current session |
+| `/daily-log` | Creates/updates `daily/YYYY-MM-DD.md` (lighter checkpoint; also runs inside `/end-session`) |
 | `/end-session` | `/daily-log` + update `log.md` + commit + push |
 | `/ingest <path>` | Processes a file in `raw/` → updates wiki + INDEX + log |
 | `/lint` | Health-check of the wiki (contradictions, orphans, gaps) |
@@ -160,9 +160,9 @@ Every operation appends **one line** to `log.md` (a lean audit trail, not a jour
 2. `/log-meeting raw/meetings/{file}`
 3. The LLM extracts decisions → `decisions/`, action items → `{macro-area}/initiatives/{workstream}.md`, people → `people/`.
 
-**End of the workday**:
+**End of each work session** (run it whenever you close Claude Code — typically several times a day, not just once):
 1. `/end-session`
-2. The LLM summarizes the session, proposes a daily log, you confirm, commit + push.
+2. The LLM summarizes the session, proposes a daily log, you confirm; it then updates `log.md`, commits + pushes.
 
 **Weekly review (Friday or Monday)**:
 1. `/weekly-review`
