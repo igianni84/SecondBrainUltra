@@ -65,7 +65,7 @@ Wait for guidance before launching the fan-out.
 ### 1.3 Decide which files result
 Map the takeaways onto the **isolated vs. shared** taxonomy above. Count the isolated files — that count drives the fan-out decision in PHASE 2.
 
-> **Status lifecycle**: every NEW knowledge/people/weekly/daily/plan page starts with `status: seed` in frontmatter. The lint flags it if it stays `seed` for more than 30 days. Values: `seed | developing | mature | evergreen`. Do not apply this to types with a domain-specific status (decision: active/superseded; initiative: active/paused/done; client: active/dormant/prospect).
+> **Status lifecycle**: every NEW knowledge/weekly/daily/plan page starts with `status: seed` in frontmatter. The lint flags it if it stays `seed` for more than 30 days. Values: `seed | developing | mature | evergreen`. Do not apply this to types with a domain-specific status (decision: active/superseded; initiative: active/paused/done; client: active/dormant/prospect; person: active/dormant/archived).
 
 ### 1.4 Degenerate case (no wiki page)
 If the raw is purely informational and yields **no** wiki page (the user says "it's just informational, don't write anything"), close **without fan-out** and append only the single `log.md` line — e.g. `… · ingest · raw/articles/{file} → ingest skipped — informational`. Skip PHASES 2–3.
@@ -197,7 +197,10 @@ Frontmatter schema:
 type: decision
 date: YYYY-MM-DD
 status: active
-tags: [{topic}]
+tags: [{topic1}, {topic2}]
+context: {macro-area-slug or 'meta'}
+supersedes: []
+superseded-by: []
 ---
 
 Body (all sections required):
@@ -228,7 +231,7 @@ Goal: create (or merge into) the person card people/{slug}.md for "{Full Name}".
 
 Target path: people/{firstname-lastname}.md   ({NEW — create | EXISTING — merge}).
 
-Pre-step (if EXISTING): read the file first. Preserve everything. Append to "Recent interactions".
+Pre-step (if EXISTING): read the file first. Preserve everything. Append to "Interactions log".
 
 Frontmatter schema (only if NEW):
 ---
@@ -237,10 +240,10 @@ name: {Full Name}
 role: {role}
 organization: {org}
 last-interaction: YYYY-MM-DD
-status: seed
+status: active
 ---
 
-Card to add (if NEW) / line to append to "## Recent interactions":
+Card to add (if NEW) / line to append to "## Interactions log":
 - YYYY-MM-DD — [[raw/articles/{file}|{title}]] (ingest, no direct interaction). {what the source says about the person}.
 
 Wiki conventions:

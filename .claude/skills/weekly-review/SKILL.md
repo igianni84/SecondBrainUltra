@@ -36,7 +36,7 @@ Glob `daily/YYYY-MM-DD.md` for each date in range [date-start, date-end].
 - Working days tracked (X/5 weekdays)
 - Decisions made (count entries in `decisions/` with dates in range)
 - Meetings logged (count files in `raw/meetings/` with dates in range)
-- Articles ingested (search log.md for "ingest |" entries in range)
+- Articles ingested (search log.md for "· ingest ·" entries in range)
 
 **Highlights** (what really happened):
 Aggregate by macro area (e.g. WORK, CLIENTS, VENTURES, LIFE). For each, 2–4 synthetic bullets.
@@ -67,7 +67,7 @@ status: seed | developing | mature | evergreen
 ---
 ```
 
-Body from the template in `weekly/README.md`.
+Body: the sections extracted in Step 4 (Key numbers, Highlights, Observed trends, Week's decisions, Next week). Use the example `weekly/2026-W03.md` as a format reference.
 
 ### Step 7 — Update INDEX and log
 
@@ -93,7 +93,7 @@ When the skill is invoked **headlessly** — by a scheduled weekly cloud routine
 - **Idempotency guard**: if `weekly/YYYY-Www.md` **already exists → do nothing** and exit. Never overwrite a weekly the user may have hand-refined.
 - **"Next week"**: derive the todos from the week's daily spillover. Lacking the user's input, open the section with the callout `> [!gap] Auto-generated in non-interactive mode — refine with off-session priorities/insight.` to mark machine-generated content for a later human pass.
 - All "What NOT to do" rules still apply: do not invent numbers, highlights, or trends. If the week has few tracked days, write "no significant trends this week".
-- **Only for the scheduled cloud routine** (not for backfill, which the main thread handles): after writing the file and updating `INDEX.md` + `log.md`, run `git add` + commit + push to `main`. Use a model-agnostic commit message and sign it:
+- **Only for the scheduled cloud routine** (not for backfill, which the main thread handles): after writing the file and updating `INDEX.md` + `log.md`, run `git add` + commit + push to the default branch. Use a model-agnostic commit message and sign it:
   ```
   Co-Authored-By: Claude <noreply@anthropic.com>
   ```

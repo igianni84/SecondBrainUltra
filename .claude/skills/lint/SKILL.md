@@ -47,7 +47,7 @@ Entries in `decisions/` not linked from any other file. Might not be "live" — 
 Entries in `knowledge/{domain}/knowledge.md` or `rules.md` that might be contradicted by newer entries (requires careful domain reading — use a subagent if large).
 
 ### 10. Stagnant `status: seed` pages
-Pages in `knowledge/`, `people/`, `weekly/`, `plans/` with frontmatter `status: seed` and `updated` (or `created` if `updated` missing) older than **30 days**. These are seed pages that never got developed — candidates for promotion to `developing`/`mature` or for archiving.
+Pages in `knowledge/`, `weekly/`, `plans/` with frontmatter `status: seed` and `updated` (or `created` if `updated` missing) older than **30 days**. These are seed pages that never got developed — candidates for promotion to `developing`/`mature` or for archiving.
 
 **Suggested fix**:
 - If the page is still relevant: promote it (enrich content, update `status: developing`).

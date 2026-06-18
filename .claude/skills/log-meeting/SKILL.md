@@ -396,7 +396,7 @@ Body, 4-5 sections:
 
 Example:
 ```
-- 2026-01-15 16:46 · log-meeting · raw/meetings/2026-01-15-acme-kickoff → 1 dec, +marcus-chen, jane-doe updated, acme-payments-rewrite, 1 hypothesis
+- 2026-01-15 16:46 · log-meeting · raw/meetings/2026-01-15-acme-kickoff → 1 dec, +marcus-chen, jane-doe updated, acme-payments-rewrite
 ```
 
 ---

@@ -89,8 +89,9 @@ The `status` field has two value families depending on page `type`:
 - `decision` → `active | superseded`
 - `initiative` → `active | paused | done`
 - `client` → `active | dormant | prospect`
+- `person` → `active | dormant | archived`
 
-**B. Universal lifecycle status** (for knowledge, hypothesis, rule, person, weekly, daily, plan, meta):
+**B. Universal lifecycle status** (for knowledge, hypothesis, rule, weekly, daily, plan, meta):
 - `seed` — exists, barely populated, just created
 - `developing` — has real content, not yet complete
 - `mature` — comprehensive, well-linked
