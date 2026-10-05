@@ -280,6 +280,8 @@ Confirm **every** sub-agent returned success before writing anything shared. If 
 ### 3.3 hot.md (optional)
 If the ingest produced strategic insights or changes Active Threads / Key Recent Facts, overwrite the 5 sections of `hot.md` (~500 words). If it's purely tactical, skip it — just the log line.
 
+⛔ **The cache replaces, it doesn't accumulate**: the new fact enters *Key Recent Facts* in place of an old one, not on top. `updated:` is only the date. Before closing: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
+
 Default: update `hot.md` if the user confirmed in PHASE 1.
 
 ### 3.4 log.md (append — ONE line)

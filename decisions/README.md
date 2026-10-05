@@ -64,7 +64,7 @@ superseded-by: []
 {what you gave up — be honest. Every decision has a cost; name it.}
 
 ## References
-- Meeting: [[raw/meetings/YYYY-MM-DD-topic|Meeting title]]
+- Meeting: [[raw/meetings/{file}|Meeting title]]
 - PRD: [[...]]
 - Knowledge: [[knowledge/.../...]]
 - People involved: [[people/person-slug|Name]]
@@ -77,5 +77,7 @@ When a new decision replaces an older one:
 2. The old decision's frontmatter is updated: `status: superseded` + `superseded-by: [2026-03-10-new-slug]`.
 3. `decisions/INDEX.md` reflects the status change on the old row.
 4. Consider adding a `> [!key-insight]` callout in the new decision summarizing why the old one didn't hold.
+
+When a new decision replaces only **part** of an older one, the new one has `supersedes-partially: [old-slug]`; the old one stays `status: active`, gets `superseded-partially-by: [new-slug]` and a `> [!stale]` callout at the top of its "Decision" section naming the superseded part.
 
 Supersede is preferred over in-place edits — the old reasoning is often historically valuable.

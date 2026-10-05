@@ -11,7 +11,7 @@ Meeting transcripts are a rich source: they contain decisions made, per-person a
 
 ## Input
 
-`/log-meeting <path>` where `<path>` is a file inside `raw/meetings/`. The file is already in `YYYY-MM-DD-{topic}.md` format with raw frontmatter (`attendees`, `context`, `date`).
+`/log-meeting <path>` where `<path>` is a file inside `raw/meetings/`, saved as the recording tool exported it: same file name, no frontmatter (`raw/` is immutable). Date, title and attendees come from the transcript's header.
 
 ## Architecture (fan-out)
 
@@ -61,9 +61,9 @@ Four cleanly separated phases:
 Open `raw/meetings/<path>` in full. If it's very long (>5000 words), that's fine — the read happens once. (Optionally delegate the first pass to an Explore sub-agent, then refine.)
 
 ### 1.2 Identify structure
-From the raw's frontmatter (`attendees`, `context`, `date`) and content, extract:
+From the transcript's header (date, title, attendees) and content, extract:
 - **Initiative(s)** touched — verify each against `WORK/initiatives/INDEX.md` (or the relevant macro-area's `initiatives/INDEX.md`). Do not invent slugs.
-- **Participants** — verify whether each already has a page with `ls people/`.
+- **Participants** — verify whether each already has a page with `ls people/`. Before writing any name heard in the transcript, grep its stem (e.g. `marc` for Marcus) in `people/`, `aliases` included, and in the macro area's `CLAUDE.md`. A name found only in transcripts is a speech-to-text mangling: the mangled form goes into the `aliases` of the right card.
 - **Explicit decisions** (with a verbatim quote where possible).
 - **Action items** (owner + description + deadline if stated).
 - **NEW people** (names not in `people/`).
@@ -229,7 +229,7 @@ Target path: people/{firstname-lastname}.md (NEW). kebab-case, no spaces, no acc
 
 Relevant raw extract:
 ---
-{transcript lines where the person speaks or is introduced + any context from the raw frontmatter}
+{transcript lines where the person speaks or is introduced + any context from the transcript header}
 ---
 
 Frontmatter:
@@ -380,12 +380,14 @@ updated: YYYY-MM-DD
 ---
 ```
 
-Body, 4-5 sections:
-1. **Last Updated** — 1 line: date + tagline.
-2. **Key Recent Facts** — 3-5 strategic bullets with wikilinks.
-3. **Recent Changes** — created / updated.
-4. **Active Threads** — action-item rollover + next steps.
-5. **Open Patterns / Hypotheses** — patterns that emerged + prior rollovers.
+Body, 5 sections, with caps:
+1. **Last Updated** — 1-2 lines: date + tagline.
+2. **Key Recent Facts** — **max 5** strategic bullets with wikilinks, ≤60 words each.
+3. **Recent Changes** — **max 3** bullets: created / updated.
+4. **Active Threads** — **max 4** bullets: action-item rollover + next steps.
+5. **Open Patterns / Hypotheses** — **≤60 words, pointers only** to `knowledge/`: the `n/3` counts live there, never here.
+
+⛔ **The cache replaces, it doesn't accumulate**: the meeting's facts go in **in place of** the oldest ones, not on top. `updated:` is only the date, never a chain of sessions. Before closing PHASE 3: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
 
 ### 3.4 log.md (one-line append)
 `log.md` holds **only the current month**. Append **exactly ONE line** under the current month header `## YYYY-MM` (create the header if it's missing). No per-entry header, no multi-line block, no "files touched:" line — the key files/outcome are summarized compactly inside the single line.

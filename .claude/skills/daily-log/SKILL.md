@@ -57,10 +57,14 @@ Add an entry under `## Daily logs` in `INDEX.md` (root):
 - [[daily/YYYY-MM-DD|YYYY-MM-DD]] — {context} — {1-line tagline of the day}
 ```
 
-**Keep reverse-chronological** (newest on top). When the section grows past ~30 entries, promote to a dedicated sub-INDEX `daily/INDEX.md`.
+**Keep reverse-chronological** (newest on top), **at most 14 entries** with a 1-line gloss (`.claude/hooks/check-index-caps.sh` measures it). The entry that falls off isn't shortened: it leaves. Older dailies are browsed from the `daily/` folder, and their weekly links them.
 
 ### Step 7 — Update `hot.md` (hot cache)
-`/hot.md` is the ~500-word cache read by the `SessionStart` hook. It must be **overwritten completely** (not appended) — it's a cache, not a journal.
+`hot.md` is the ~500-word cache read by the `SessionStart` hook. It must be **overwritten completely** (not appended) — it's a cache, not a journal.
+
+⛔ **Eviction rule**: the cache doesn't accumulate, it replaces. When a new fact comes in, what the next session no longer needs goes out. The mark of a journal isn't length: it's yesterday's session kept under today's (the journal is the `daily/` you just wrote). Evicted content isn't lost: it lives in the daily, in `decisions/`, in `knowledge/`, in the initiatives.
+
+**Check before closing the step**: `wc -w hot.md` → **≤ 700 words**. Under the cap the cache can grow. Over it, what's no longer needed goes first; if everything is needed, go over and tell the user how many words and why.
 
 Overwrite `hot.md` with frontmatter:
 
@@ -72,14 +76,16 @@ updated: YYYY-MM-DD
 ---
 ```
 
-Body in 4–5 sections:
-- **Last Updated**: 1 line with date + session tagline
-- **Key Recent Facts**: 3–5 strategic bullets from today and the last 2–3 days (wikilinks to decisions/ and key meetings)
-- **Recent Changes**: created / updated / new sub-index from today
-- **Active Threads**: next steps, rollovers, open blockers, operational flags (e.g. declared stress)
-- **Open Patterns / Hypotheses**: patterns to monitor or promote to knowledge rules
+⛔ `updated:` is **only the date**. Never a chain of sessions separated by `//`: it's how that one field grows to hundreds of words.
 
-Format reference: the file itself (first iteration is hand-written). If unsure about tone, read the current one to calibrate.
+Body in 5 sections, with caps:
+- **Last Updated** (1–2 lines): date + session tagline
+- **Key Recent Facts** (**max 5 bullets**, ≤60 words each): strategic facts from today and the last 2–3 days (wikilinks to decisions/ and key meetings)
+- **Recent Changes** (**max 3 bullets**): created / updated / new sub-index — only the last 1–2 sessions
+- **Active Threads** (**max 4 bullets**): next steps, rollovers, open blockers, operational flags (e.g. declared stress)
+- **Open Patterns / Hypotheses** (**≤60 words, pointers only**): links to the active rules/hypotheses in `knowledge/`. ⛔ Pattern tracking (`n/3` counts, dated confirmations) lives in `knowledge/{domain}/hypotheses.md`, **never here**. If a pattern exists only in `hot.md`, write it in `knowledge/` *before* evicting it.
+
+Format and caps reference: `CLAUDE.md` §4bis. If unsure about tone, read the current `hot.md` to calibrate.
 
 ### Step 8 — Append to log.md
 Append **a single line** to `log.md` (root), under the current month's header `## YYYY-MM` (create it if missing — `log.md` holds only the current month):

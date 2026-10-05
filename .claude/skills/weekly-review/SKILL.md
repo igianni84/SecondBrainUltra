@@ -64,10 +64,13 @@ date-start: YYYY-MM-DD
 date-end: YYYY-MM-DD
 days-tracked: N
 status: seed | developing | mature | evergreen
+generated: routine | backfill   # ONLY in non-interactive mode; omit when written with the user
 ---
 ```
 
 Body: the sections extracted in Step 4 (Key numbers, Highlights, Observed trends, Week's decisions, Next week). Use the example `weekly/2026-W03.md` as a format reference.
+
+At the bottom, always `## References` with `- Dailies of the week: [[daily/YYYY-MM-DD]] · …`, one link per daily. `INDEX.md` keeps only the latest 14 dailies: past those, the weekly is what links a daily, and without it the lint reports the daily as an orphan.
 
 ### Step 7 — Update INDEX and log
 
@@ -91,7 +94,7 @@ When the skill is invoked **headlessly** — by a scheduled weekly cloud routine
 
 - **Skip** Step 2 (the overwrite prompt), the priorities question in Step 4, and Step 5 (draft confirmation). Generate directly.
 - **Idempotency guard**: if `weekly/YYYY-Www.md` **already exists → do nothing** and exit. Never overwrite a weekly the user may have hand-refined.
-- **"Next week"**: derive the todos from the week's daily spillover. Lacking the user's input, open the section with the callout `> [!gap] Auto-generated in non-interactive mode — refine with off-session priorities/insight.` to mark machine-generated content for a later human pass.
+- **"Next week"**: derive the todos from the week's daily spillover. Lacking the user's input, mark the file in the **frontmatter** with `generated: routine` (or `backfill`) — ⛔ never with a `[!gap]` callout. Where a file comes from is a stable fact, so it goes in the frontmatter; a callout is an open question someone has to answer, and the lint would count one in every generated weekly.
 - All "What NOT to do" rules still apply: do not invent numbers, highlights, or trends. If the week has few tracked days, write "no significant trends this week".
 - **Only for the scheduled cloud routine** (not for backfill, which the main thread handles): after writing the file and updating `INDEX.md` + `log.md`, run `git add` + commit + push to the default branch. Use a model-agnostic commit message and sign it:
   ```

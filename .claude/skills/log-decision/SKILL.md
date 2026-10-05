@@ -22,8 +22,9 @@ From these, build the filename: `decisions/YYYY-MM-DD-{topic-slug}.md`
 
 ### Step 2 — Check prior decisions
 Before writing, **search `decisions/`** for existing entries on the same topic. If found:
-- Show the user: "There's already `[[decisions/YYYY-MM-DD-old-topic]]`. Do you want to (a) create a new one that supersedes it, (b) edit the existing one, or (c) cancel?"
+- Show the user: "There's already `[[decisions/YYYY-MM-DD-old-topic]]`. Do you want to (a) create a new one that supersedes it, (b) edit the existing one, (c) cancel, or (d) create a new one that supersedes only part of it?"
 - If new-supersede: the new one has `supersedes: [old-id]`, the old one becomes `status: superseded` with `superseded-by: [new-id]`.
+- If it supersedes only part: the new one has `supersedes-partially: [old-id]`; the old one stays `status: active` and gets `superseded-partially-by: [new-id]`. Ids are the slug, without `decisions/`.
 
 ### Step 3 — Interview to fill the template
 Ask the questions from the decision template:
@@ -84,6 +85,8 @@ Open the prior decision's file, change frontmatter:
 - `status: superseded`
 - `superseded-by: [new-id]`
 
+If it supersedes only part: `status` stays `active`; add `superseded-partially-by: [new-id]` and, at the top of the "Decision" section, a `> [!stale]` callout saying which part is superseded, with the link to the new one.
+
 ### Step 7 — Update sub-index + INDEX root
 Pattern: **sub-index first, INDEX root after**.
 
@@ -91,12 +94,14 @@ Pattern: **sub-index first, INDEX root after**.
 ```markdown
 | YYYY-MM-DD | [[decisions/YYYY-MM-DD-{slug}\|{title}]] | active | {key tag} |
 ```
-If a decision supersedes an earlier one, update the old row's status to **superseded**.
+If a decision supersedes an earlier one, update the old row's status to **superseded**. If it supersedes only part, the old row's status becomes `active *(point N superseded → [[decisions/{new-slug}\|YYYY-MM-DD]])*`.
 
 **B. `INDEX.md` (root)** "Decisions" section — only if the decision deserves to be in the top-5 recent ones shown at root level. If yes, include it and remove one less recent/relevant. Always keep the top link to `[[decisions/INDEX|decisions/INDEX]]`.
 
 ### Step 8 — Update `hot.md`
 If the decision is strategic or architectural, update `hot.md` (complete overwrite). If purely tactical, you can skip.
+
+⛔ **The cache replaces, it doesn't accumulate**: the decision enters *Key Recent Facts* in place of an old fact, not on top. `updated:` is only the date. Before closing: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
 
 ### Step 9 — Append to log.md
 Append **a single line** to `log.md` (root), under the current month's header `## YYYY-MM` (create it if the current month's header is missing):

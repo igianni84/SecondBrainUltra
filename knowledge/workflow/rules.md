@@ -24,9 +24,9 @@ Rules are the crystallized output of the knowledge pipeline. A fresh vault has n
 **Why**: {the underlying reason — often a specific experience or constraint.}
 **How to apply**: {when/where this rule kicks in, with edge cases.}
 
-- Confirmed on: 2026-MM-DD (promoted from hypothesis)
-- Original observations:
+- Confirmations: 3/3 — promoted to rule 2026-MM-DD
   - 2026-MM-DD: {source}
   - 2026-MM-DD: {source}
   - 2026-MM-DD: {source}
+  - _Only the counter and the last 3 confirmations stay here; older ones move to [[knowledge/{domain}/knowledge|knowledge.md]]._
 ```

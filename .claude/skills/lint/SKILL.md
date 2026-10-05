@@ -61,6 +61,8 @@ Pages with open `> [!contradiction]` or `> [!gap]` callouts — flags left open 
 - `[!contradiction]`: re-read the two conflicting pages, decide which prevails, update and remove the callout. If the contradiction was real but resolved by a more recent decision, link the decision.
 - `[!gap]`: if the gap is still open, consider a targeted `/ingest`, a `/log-meeting` for a dedicated call, or turn it into an action item in the daily.
 
+⚠️ **Before reporting a `[!gap]`, check that it is one** (`CLAUDE.md` §4). Three cases are formatting, not gaps: a blocker inside a "Blockers and risks" section, a pointer to the page where the gap really lives, a question inside a dated entry (a daily, a timeline). The test: *if someone closed this gap, would this file change?* Counting those as issues inflates the report and hides the few that need an answer.
+
 ## Output
 
 File: `lint-report.md` (root, overwritten on each run).
@@ -96,11 +98,22 @@ N total issues.
 
 ## Workflow
 
-### Step 1 — Explore the wiki
-Use a subagent (Explore) to scan every `.md` in the wiki (excluding `raw/` which isn't linted), extracting wikilinks and frontmatter. For large repos, delegation is faster.
+### Step 1 — Measure with the committed scanner
 
-### Step 2 — Run the 11 checks
-Category by category. Aggregate the issues.
+⛔ **Don't rewrite the scanner.** It's committed, and its exclusions are constants in the file:
+
+```bash
+python3 .claude/hooks/lint-scan.py                     # readable report
+python3 .claude/hooks/lint-scan.py --json              # structured dump
+python3 .claude/hooks/lint-scan.py --only links,seed   # some checks only
+```
+
+It covers checks **1** (orphans), **2** (wikilinks), **3** (frontmatter/type), **10** (stagnant seeds) and **11** (callouts), plus the **hypothesis decay** (a hypothesis stuck at 1/3 for over 90 days: a person decides whether to demote it to `knowledge.md`) and the **caps of `hot.md` and `lessons.md`**. It doesn't cover 4-9: they need judgment.
+
+A scanner rewritten in each session re-derives the same false positives from scratch and inflates the first measure. If it needs extending, **edit the file**: the constants are at the top (`EXCLUDED_*`, `DOC_SOURCES`, `PLACEHOLDER`, `VALID_TYPES`, `DATE_FIELDS`, the thresholds).
+
+### Step 2 — Run the judgment checks
+Checks **4-9** need reading (use a subagent if the domain is large). Aggregate their issues with the scanner's.
 
 ### Step 3 — Suggest fixes
 Every issue must have a concrete action. Not "check X" — but "rename X to Y" or "add link in Z".
@@ -122,3 +135,4 @@ Show a report summary and ask whether to apply some auto-fixes (the trivial ones
 - Do not auto-apply fixes without asking.
 - Do not remove orphan files — those are the user's choices.
 - Do not invent contradictions: if uncertain, report as "to verify", not as an issue.
+- Do not fix the content of a work area (a spec, an initiative card) during the lint: the lint fixes the wiki. A note on that content found along the way goes into the next steps of the initiative that owns it.

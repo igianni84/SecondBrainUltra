@@ -66,6 +66,8 @@ Add a row in the "Active" table:
 ### Step 7 — Update `hot.md`
 A new initiative almost always shifts "Active Threads" in the hot cache. Update `hot.md` (complete overwrite, ~500 words). If the initiative is marginal (e.g. exploration, low priority), you can skip.
 
+⛔ **The cache replaces, it doesn't accumulate**: the new initiative enters *Active Threads* in place of an old thread, not on top. `updated:` is only the date. Before closing: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
+
 ### Step 8 — Append to log.md
 Append ONE single line under the current month's header in `log.md` (`## YYYY-MM`, create it if the current month's header is missing):
 ```

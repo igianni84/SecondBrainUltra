@@ -161,14 +161,17 @@ knowledge/
 ```
 
 ### Promotion & demotion
-- Hypothesis confirmed **3 times** → promote to rule
-- Rule contradicted → demote to hypothesis
-- Track the count inside hypotheses:
+- Hypothesis confirmed **3 times in different contexts** → promote to rule. Two cases from the same call, the same day or the same exercise count as one: list the second, marked `does NOT count`.
+- On promotion the hypothesis stays in `hypotheses.md` as a trace that points to the rule: `PROMOTED` in its heading, or `promoted to rule` on its Confirmations line. The rule keeps the counter and the last 3 confirmations; the older ones move to the domain's `knowledge.md`.
+- Rule contradicted → demote to hypothesis.
+- **Hypothesis stuck at 1/3 for >90 days → demote to `knowledge.md`**, with the date and the reason: it isn't deleted, it changes status. Not automatic: the scanner measures it (`lint-scan.py` → `stale_1of3`, threshold `HYPO_STALE_DAYS`), `/lint` reports it, and a person decides, because a rare hypothesis can be the most informative one.
+- Track the count inside hypotheses. `lint-scan.py` reads the markers above, so write them as they are:
   ```
   ### Hypothesis: X
   - Confirmations: 2/3
     - 2026-01-22: observed during meeting A
     - 2026-01-25: confirmed in call with client B
+    - 2026-01-25: same call, a second case — does NOT count
   ```
 
 ### Suggested domains
@@ -224,10 +227,10 @@ Always `[[path/without-extension|optional label]]` for internal links.
 ### YAML frontmatter
 Mandatory on every wiki page. Minimum schema per type:
 - `daily`: type, date
-- `weekly`: type, date (Monday of the week), week-number
+- `weekly`: type, week, date-start, date-end, days-tracked
 - `decision`: type, date, status, tags
-- `meeting` (in `raw/meetings/` and the summary in `daily/`): type, date, attendees, source
-- `person`: type, name, role, organization, last-interaction
+- meeting transcripts (`raw/meetings/`): no frontmatter. The file keeps the name the recording tool gave it; date and attendees are read from the transcript's header
+- `person`: type, name, role, organization, status, last-interaction (only the date, `YYYY-MM-DD`)
 - `initiative`: type, status (active|paused|done), owner, stakeholders, related-prd
 - `client`: type, status (active|dormant|prospect), since, tags
 - `knowledge`/`hypothesis`/`rule`: type, domain, confirmations (for hypothesis)
@@ -243,10 +246,13 @@ Mandatory on every wiki page. Minimum schema per type:
 ```
 - YYYY-MM-DD HH:MM · {op} · {target} → {outcome ≤15 words}
 ```
+`HH:MM` is copied from the output of `date +%H:%M` run in the session, never estimated.
+
 The *content* of the work lives in `daily/`, `decisions/`, `people/`, `knowledge/`, etc. — `log.md` keeps only the mechanical trace (when · what · on what · outcome).
 
 ### Compaction (general rule — files distill, they don't accumulate)
-Same principle as `hot.md` ("it's a cache, not a journal"). Applies to files that would otherwise grow unbounded:
+Same principle as `hot.md` ("it's a cache, not a journal"). **A cap makes you re-read, it doesn't cut regardless**: under the cap, write what's needed; over it, what's no longer needed goes first (closed, or already saved elsewhere); if everything is needed, go over and tell the user by how much and why. Applies to files that would otherwise grow unbounded:
+- **`hot.md`**: caps and eviction rule in `../CLAUDE.md` §4bis.
 - **`log.md`** keeps only the **current month**. On month rollover, `/end-session` moves concluded-month entries to `log/YYYY-MM.md` (one file per month).
 - **`INDEX.md`** is a **catalog that links, not one that contains**. Chronological sections (daily, raw meetings, articles) keep only the most recent ~10–14 entries with a link + a 1-line gloss; the full history is browsed from the folder. **Never paste the full content of child files** into the index. The caps (entries per section, gloss length, file size) are measured by `.claude/hooks/check-index-caps.sh` (see "Runtime hooks").
 
@@ -266,6 +272,8 @@ Three hooks automate persistent memory and compaction — executed by the runtim
 - **`Stop` ②** → `.claude/hooks/check-index-caps.sh`: if `INDEX.md` was touched in the session (uncommitted, or committed in the last 3 hours), measures entries and gloss length per section and prints `INDEX_CAPS_REMINDER` **with the real numbers** when a cap is exceeded. Silent when compliant. The caps are hardcoded in the script (`cap[...]`, keyed by the `## ` titles of `INDEX.md`): if they change in "Compaction", or a section is renamed, change them there too.
 
 The `Stop` hooks measure, they don't block (no `exit 2`). Their output does **not** reach the model: for a `Stop` hook that exits 0, Claude Code writes stdout to the debug log only. Making it reach the model takes JSON output (`hookSpecificOutput.additionalContext`), which also gives the model another turn.
+
+**If a cap asks to remove something from an existing file, a mechanism measures it — a hook or `lint-scan.py` — not a sentence in a skill:** prose that recommends a cut isn't enough. The mechanism reports the number and doesn't block; whether one should block is decided on lint data, not up front.
 
 The hooks find the vault root with git, so they work from a session started in any subfolder, and they stay silent outside the meta-layer (no `hot.md` there).
 

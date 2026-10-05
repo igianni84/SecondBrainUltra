@@ -1,7 +1,7 @@
 ---
 type: meta
 description: Hot cache — recent-context digest (~500 words), overwritten on every significant operation
-updated: {{YYYY-MM-DD}} (template baseline)
+updated: 2026-01-15
 ---
 
 # Hot Cache
@@ -20,7 +20,7 @@ updated: {{YYYY-MM-DD}} (template baseline)
 - _{{3–5 strategic bullets. Wikilink to the most relevant `decisions/...` and `raw/meetings/...`. Focus on what shifted in the last 2–3 days.}}_
 - _{{Example: "Kickoff meeting with ACME Corp clarified that payments scope stays out of phase 1. See [[decisions/2026-01-15-pick-obsidian-over-notion]]."}}_
 
-## Recent Changes (last 3 days)
+## Recent Changes
 
 - **Created**: _{{new wiki pages}}_
 - **Updated**: _{{pages with material edits}}_
@@ -33,5 +33,5 @@ updated: {{YYYY-MM-DD}} (template baseline)
 
 ## Open Patterns / Hypotheses
 
-- _{{Patterns observed but not yet confirmed 3×. Candidates for promotion to rules.}}_
-- _{{Example: "Meeting transcripts from Zoom miss the first 30 seconds — cross-check the first decision with the attendees' notes."}}_
+- _{{Pointers only, ≤60 words in all: links to the active rules and hypotheses in `knowledge/`. Counts and confirmations live there, never here.}}_
+- _{{Example: "Watching [[knowledge/workflow/hypotheses|workflow hypotheses]]: transcript gaps, engagement shape."}}_

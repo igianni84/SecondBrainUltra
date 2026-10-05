@@ -76,7 +76,7 @@ WIKI_AREAS = re.compile(r"^(daily|weekly|decisions|people|knowledge|plans|log)/|
 # Frontmatter — the `type:` enum of ../CLAUDE.md §4. `.claude/memory/` has its
 # own schema and is out of the perimeter anyway (hidden folder).
 VALID_TYPES = {
-    "meeting", "decision", "knowledge", "hypothesis", "rule", "person",
+    "decision", "knowledge", "hypothesis", "rule", "person",
     "initiative", "daily", "weekly", "plan", "client", "meta", "lessons", "log",
     "log-archive", "lint-report",
 }
@@ -616,7 +616,7 @@ def report(res, only=None):
             flag = "✅" if h["words"] <= h["cap"] else "⚠"
             print(f"\n=== hot.md — {h['words']} words / cap {h['cap']} {flag} ===")
             if not h["updated_is_single_date"]:
-                print(f"  ⛔ updated: is not a single date → «{h['updated_raw']}»")
+                print(f"  ⛔ updated: is not a single date → {h['updated_raw']!r}")
             for s in h["sections"]:
                 if s["over_bullet_count"]:
                     print(f"  ⚠ [{s['section']}] {s['bullets']} bullets "

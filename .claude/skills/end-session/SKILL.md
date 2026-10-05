@@ -24,12 +24,12 @@ Invoke/execute the `/daily-log` workflow (see `.claude/skills/daily-log/SKILL.md
 - Wait for confirmation
 - Write `daily/YYYY-MM-DD.md`
 - Update `INDEX.md` (Daily logs section)
-- Update `hot.md` (hot cache ~500 words)
+- Update `hot.md` (hot cache ~500 words, **cap 700**: check with `wc -w hot.md`. The cache replaces, it doesn't accumulate; `updated:` is only the date, never a chain of sessions. Per-section caps in `CLAUDE.md` §4bis)
 - Append to `log.md`
 
 **Do not proceed to next steps until the user has confirmed the daily log.**
 
-> **Note on `Stop` hook**: the hook in `.claude/settings.json` emits a `HOT_CACHE_REMINDER` if the wiki was touched but `hot.md` is not among the changed files in the commit. If the reminder fires after `/daily-log` has already run, it's a false positive (daily-log already updates `hot.md`) — ignore it.
+> **Note on the `Stop` hooks**: they measure (wiki touched but `hot.md` not, `INDEX.md` over its caps), but nobody sees the result. A `Stop` hook that exits 0 writes its output to the debug log only: neither you nor the user get the `HOT_CACHE_REMINDER`. Don't wait for it — the `hot.md` update in this step is what keeps the cache in sync.
 
 ### Step 2 — Check repo status
 ```bash
@@ -44,7 +44,16 @@ Show the user what will be committed. If unexpected files appear (not session-re
 Do this in order:
 
 1. **Month-rollover check (before appending).** Inspect the monthly headers (`## YYYY-MM`) already present in `log.md`. If any entries sit under a **concluded** month's header (any month earlier than the current one — e.g. today is July but a `## 2026-06` section is still there):
-   - **Move** each concluded month's entire section into `log/YYYY-MM.md` — one file per month. Create the file if it doesn't exist, or append to the end of it if it already exists.
+   - **Move** each concluded month's entire section into `log/YYYY-MM.md` — one file per month. Create the file if it doesn't exist, or append to the end of it if it already exists. A new archive opens with this frontmatter, or the lint reports it:
+     ```yaml
+     ---
+     type: log-archive
+     date: YYYY-MM-DD        # last day of that month
+     status: evergreen
+     tags: [log, archive]
+     ---
+     ```
+   - Add `[[log/YYYY-MM]]` at the head of the `> **Archives:**` line of `log.md` (create the line at the end of the intro if it's missing): it's the archive's only incoming link, and without it the lint reports the archive as an orphan.
    - Leave **only** the current month's `## YYYY-MM` section in `log.md`. Create that header if it isn't there yet.
    This is the mechanism that keeps `log.md` bounded.
 2. **Append the new entry.** Add exactly **one line** under the current month's header, using the canonical format (separator = middle dot `·`):

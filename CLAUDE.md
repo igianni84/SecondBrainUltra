@@ -39,7 +39,7 @@ Adapted from Andrej Karpathy's "LLM Wiki" and AgriciDaniel's claude-obsidian.
 
 ### Layer 1 — `raw/` (immutable)
 Everything entering from outside. **The LLM reads but never modifies.**
-- `raw/meetings/` — meeting transcripts (`YYYY-MM-DD-{topic}.md`)
+- `raw/meetings/` — meeting transcripts, saved as the recording tool exported them: same file name, no frontmatter. Date and attendees come from the transcript's header.
 - `raw/articles/` — web-clipped articles (via Obsidian Web Clipper or manual)
 - `raw/notes/` — raw notes, voice-memo transcripts, chat screenshots
 - `raw/assets/` — PDFs/images/attachments (PDFs excluded from git via `.gitignore`)
@@ -72,7 +72,7 @@ This vault is also an Obsidian vault (`.obsidian/` is pre-configured). To get gr
 - **YAML frontmatter** on every wiki page:
   ```yaml
   ---
-  type: meeting | decision | knowledge | hypothesis | rule | person | initiative | daily | weekly | plan | client | meta | lessons | log | log-archive | lint-report
+  type: decision | knowledge | hypothesis | rule | person | initiative | daily | weekly | plan | client | meta | lessons | log | log-archive | lint-report
   date: YYYY-MM-DD
   status: <see status lifecycle below>
   tags: [topic1, topic2]
@@ -81,7 +81,7 @@ This vault is also an Obsidian vault (`.obsidian/` is pre-configured). To get gr
   ```
 - **Naming**: `kebab-case`, dates `YYYY-MM-DD`, slugs short and meaningful.
 - **PNG/JPG are included** in the repo (Obsidian assets); PDF/XLSX/PPTX/DOCX **are not** (see `.gitignore`).
-- **Outside this enum**: `.claude/memory/` has its own schema (`user | feedback | project | reference`, see `.claude/CLAUDE.md` → Team Memory). Schema-layer files (`CLAUDE.md`, `README.md`, `MEMORY.md`, `SKILL.md`) need no frontmatter.
+- **Outside this enum**: `.claude/memory/` has its own schema (`user | feedback | project | reference`, see `.claude/CLAUDE.md` → Team Memory). Schema-layer files (`CLAUDE.md`, `README.md`, `MEMORY.md`, `SKILL.md`) need no frontmatter. Files in `raw/` aren't wiki pages: they follow `raw/README.md`, and meeting transcripts have no frontmatter at all.
 
 ### Status lifecycle (`status` field)
 
@@ -112,18 +112,52 @@ A new page almost always starts as `seed`. `/lint` flags it if it stays `seed` f
 
 `/lint` flags open `[!contradiction]` and `[!gap]` callouts.
 
+### ⛔ When NOT to use `[!gap]`
+
+`[!gap]` is a **flag**: it says *"something is missing here and someone has to close it"*. If it also marks what's already tracked, it stops telling things apart.
+
+Three cases that aren't gaps:
+
+| Not a gap | Why | Write instead |
+|---|---|---|
+| **A blocker inside a "Blockers and risks" section** | The section *is* already its home. The flag adds nothing | A bold bullet |
+| **A pointer to another home** (*"⛔ Home: X — only the pointer here"*) | The gap is open **there**, with its own marker | A bullet with the wikilink |
+| **A question inside a dated entry** (an initiative's timeline, `daily/`, `decisions/`) | It's the snapshot of *that* day, not a question for today | *"Open question as of YYYY-MM-DD, kept as a record"* |
+
+⇒ The test: **if someone closed this gap, would this file change?** If the answer is "no, another file would change", a pointer goes here. If it's "no, it was true only that day", it's a record. `[!gap]` stays for the **open question that has no home yet** — the only case where the lint should wake someone up.
+
 ---
 
 ## 4bis. Hot cache (`hot.md`)
 
 The file `hot.md` at the root is a ~500-word cache of the most recent context. **It's a cache, not a journal** — overwritten completely, never appended.
 
-**Format** (5 sections):
-1. **Last Updated** — 1 line: date + session tagline
-2. **Key Recent Facts** — 3–5 strategic bullets (wikilinks to decisions/ and key meetings)
+### ⛔ Eviction rule (the only one that matters)
+
+**The cache doesn't accumulate: it replaces.** When a new fact comes in, what the next session no longer needs goes out — you don't add on top and leave the previous session below. The mark of a journal isn't length: it's yesterday's session kept under today's, or a closed fact that stays (the journal is `daily/` + `log.md`). Under the cap the cache can grow: write what's needed.
+
+Evicted content **isn't lost**: it already lives in `daily/`, `decisions/`, `knowledge/` and the initiatives. Before evicting, check that it has a home — if a pattern exists **only** in `hot.md`, its home is `knowledge/{domain}/hypotheses.md`, not this cache.
+
+### Caps
+
+| | Cap |
+|---|---|
+| **Whole file** | **≤ 700 words** (target ~500). Over the cap, what's no longer needed goes first; if everything is needed, go over and tell the user how many words and why |
+| `updated:` (frontmatter) | **only `YYYY-MM-DD`**. ⛔ **Never a chain** of sessions separated by `//` — it's how that one field grows to hundreds of words |
+| **Last Updated** | 1–2 lines: date + tagline |
+| **Key Recent Facts** | **max 5 bullets**, ≤60 words each |
+| **Recent Changes** | **max 3 bullets** — only the last 1–2 sessions |
+| **Active Threads** | **max 4 bullets** |
+| **Open Patterns** | **pointers only** to `knowledge/`, ≤60 words in all. Pattern tracking (`n/3` counts, dated confirmations) lives in `knowledge/`, **never here** |
+
+`lint-scan.py` measures every cap except the Last Updated lines; `wc -w hot.md` gives the total on the spot.
+
+**Format** (5 sections, in this order):
+1. **Last Updated** — date + session tagline
+2. **Key Recent Facts** — strategic bullets (wikilinks to decisions/ and key meetings)
 3. **Recent Changes** — created / updated / new sub-index
 4. **Active Threads** — next steps, rollovers, blockers, operational flags
-5. **Open Patterns / Hypotheses** — patterns to monitor or to promote to rules
+5. **Open Patterns / Hypotheses** — pointers to the active rules and hypotheses in `knowledge/`
 
 **Auto-loaded** at every session start, after `/clear` and after compaction, via the `SessionStart` hook in `.claude/settings.json`. Eliminates the need for a manual recap.
 
@@ -158,7 +192,7 @@ Every operation appends **one line** to `log.md` (a lean audit trail, not a jour
 3. The LLM reads, writes a summary in `knowledge/{domain}/`, updates INDEX, logs.
 
 **Meeting finished**:
-1. Export the transcript, save into `raw/meetings/YYYY-MM-DD-{topic}.md`
+1. Export the transcript, save it into `raw/meetings/` with the name the tool gave it, no frontmatter added
 2. `/log-meeting raw/meetings/{file}`
 3. The LLM extracts decisions → `decisions/`, action items → `{macro-area}/initiatives/{workstream}.md`, people → `people/`.
 

@@ -10,25 +10,17 @@ Everything that enters SecondBrainUltra from outside lands here. The LLM may rea
 
 ## Subfolders
 
-- **`meetings/`** — call/meeting transcripts. Filename: `YYYY-MM-DD-{topic}.md`. Processed by `/log-meeting <path>`.
+- **`meetings/`** — call/meeting transcripts, saved as the recording tool exported them: same file name, no frontmatter. Processed by `/log-meeting <path>`.
 - **`articles/`** — web-clipped articles (Obsidian Web Clipper or manual save). Processed by `/ingest <path>`.
 - **`notes/`** — raw notes, voice-memo transcripts, screenshots-as-text. Processed by `/ingest <path>`.
 - **`assets/`** — PDFs, images, attachments. PDFs are excluded from git (see `.gitignore`).
 
 ## Frontmatter conventions
 
-Every `raw/` file should have minimal frontmatter so downstream skills can route correctly.
+Articles and notes should have minimal frontmatter so downstream skills can route correctly. Meeting transcripts have none.
 
 ### For meetings
-```yaml
----
-type: raw-meeting
-date: YYYY-MM-DD
-attendees: [person-slug-1, person-slug-2]
-source: google-meet | zoom | teams | in-person
-context: {macro-area-slug} | mixed
----
-```
+No frontmatter: the transcript stays as the recording tool exported it, so there's nothing to fill in by hand. `/log-meeting` reads date, title and attendees from the transcript's header.
 
 ### For articles
 ```yaml

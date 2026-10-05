@@ -1,13 +1,6 @@
----
-type: raw-meeting
-date: 2026-01-15
-attendees: [jane-doe, you]
-source: google-meet
-context: work
-tags: [kickoff, acme, payments]
----
-
 # ACME Kickoff — 2026-01-15 · 60 min · Google Meet
+
+Attendees: Jane Doe (ACME Corp), You
 
 > EXAMPLE FILE. This is a fictional meeting transcript used to demonstrate the `/log-meeting` workflow of SecondBrainUltra. Replace with real transcripts as you start using your wiki.
 
