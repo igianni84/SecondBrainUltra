@@ -26,9 +26,8 @@
 
 ## 3. Self-Improvement Loop (lessons.md)
 
-- After EVERY correction from the user: update `../lessons.md` with the pattern.
-- Write rules for yourself that prevent the same mistake.
-- At session start, read `lessons.md` to avoid repeating already-corrected mistakes.
+- After EVERY correction from the user: if the mistake comes from a wrong fact written in a file (a `CLAUDE.md`, memory, a wiki page), fix that file in the same session — for the root `CLAUDE.md` with the plan mode of §1, but now, not queued. Then write the rule that prevents the same mistake in its home ("When to use what" below): a lesson doesn't win over a file that loads every session.
+- `../lessons.md` loads itself every session: the root `CLAUDE.md` imports it with `@lessons.md`. One line per rule, cap 3,000 words (measured by `lint-scan.py`).
 - For accumulated domain knowledge (descriptive, not corrective), see `## Knowledge System`.
 
 ---
@@ -69,7 +68,7 @@ When the user reports a block (hard decision, conflict between sources, knowledg
 3. **Track Progress**: use TaskCreate/TaskUpdate. Mark completed as soon as a task is really done.
 4. **Explain Changes**: high-level summary at each step.
 5. **Document Results**: update `log.md` with what was done.
-6. **Capture Lessons**: update `lessons.md` after every correction.
+6. **Capture Lessons**: after every correction, the rule in its home (§3).
 
 ---
 
@@ -120,12 +119,12 @@ Four persistence mechanisms, each with a distinct purpose:
 |---|---|---|---|---|
 | **Auto Memory** | `~/.claude/projects/.../memory/` | Personal, per-machine | Cross-session | The LLM's personal "mental model" of the user. Not shared. System-managed. |
 | **Team Memory** | `.claude/memory/` (here) | Shared, committed | Cross-session | Workflow conventions, external references, project state. Visible to anyone reading the repo. |
-| **Lessons** | `lessons.md` (root) | Shared, committed | Cross-session | Mistakes and corrections. Quick-reference to avoid repeating. |
+| **Lessons** | `lessons.md` (root) | Shared, committed | Cross-session | Method corrections, one line each. Loaded every session via the `@lessons.md` import. |
 | **Knowledge System** | `knowledge/{domain}/` | Shared, committed | Long-term, evolving | Domain insights with a promotion lifecycle (knowledge → hypotheses → rules). |
 
 ### When to use what
 
-- User corrects me → `lessons.md`
+- User corrects me → **one home only**. A preference of the user (style, documents, communication) → Auto Memory; a method mistake with no other home (a skill, a `CLAUDE.md`, a rule in `knowledge/`) → `lessons.md`, one line. The story of the episode goes in the daily.
 - I discover a domain pattern → `knowledge/{domain}/`
 - Workflow convention or external reference → `.claude/memory/`
 - Personal preference of the user → Auto Memory (system-managed)
@@ -249,7 +248,7 @@ The *content* of the work lives in `daily/`, `decisions/`, `people/`, `knowledge
 ### Compaction (general rule — files distill, they don't accumulate)
 Same principle as `hot.md` ("it's a cache, not a journal"). Applies to files that would otherwise grow unbounded:
 - **`log.md`** keeps only the **current month**. On month rollover, `/end-session` moves concluded-month entries to `log/YYYY-MM.md` (one file per month).
-- **`INDEX.md`** is a **catalog that links, not one that contains**. Chronological sections (daily, raw meetings, articles) keep only the most recent ~10–14 entries with a link + a 1-line gloss; the full history is browsed from the folder. **Never paste the full content of child files** into the index.
+- **`INDEX.md`** is a **catalog that links, not one that contains**. Chronological sections (daily, raw meetings, articles) keep only the most recent ~10–14 entries with a link + a 1-line gloss; the full history is browsed from the folder. **Never paste the full content of child files** into the index. The caps (entries per section, gloss length, file size) are measured by `.claude/hooks/check-index-caps.sh` (see "Runtime hooks").
 
 ### Updating INDEX.md + sub-index
 Every operation that creates/moves a wiki page **must** update:
@@ -260,10 +259,14 @@ Pattern: **sub-index first, INDEX root after**. The root INDEX does not duplicat
 
 ### Runtime hooks (`.claude/settings.json`)
 
-Three hooks automate persistent memory — executed by the runtime, not by the LLM:
+Three hooks automate persistent memory and compaction — executed by the runtime, not by the LLM:
 
-- **`SessionStart`** (matcher `startup|resume`) → silent prompt: read `hot.md` if it exists. Gives the model recent context without a manual recap.
-- **`PostCompact`** → after context compaction, re-read `hot.md` (hook-injected context doesn't survive compaction).
-- **`Stop`** → if the wiki was modified in-session but `hot.md` isn't among the touched files, emit `HOT_CACHE_REMINDER` to the model. If `/end-session` or `/daily-log` were already executed, this is a false positive (they've already updated `hot.md`) — ignore it.
+- **`SessionStart`** (matcher `startup|resume|clear|compact`) → prints `hot.md`, which enters the context at startup, on resume, after `/clear` and after compaction. Gives the model recent context without a manual recap. There is no `PostCompact` hook: its output doesn't enter the context, so the `compact` matcher does that job. Hook output over 10,000 characters becomes a 2,000-character preview: that's why `lessons.md` isn't loaded by a hook but by the `@lessons.md` import in the root `CLAUDE.md`.
+- **`Stop` ①** → if the wiki was modified in the session (new untracked files included) but `hot.md` isn't among the touched files, prints `HOT_CACHE_REMINDER`. After `/end-session` it can still fire on untracked files left out of the commit: a false positive, since `hot.md` is already up to date.
+- **`Stop` ②** → `.claude/hooks/check-index-caps.sh`: if `INDEX.md` was touched in the session (uncommitted, or committed in the last 3 hours), measures entries and gloss length per section and prints `INDEX_CAPS_REMINDER` **with the real numbers** when a cap is exceeded. Silent when compliant. The caps are hardcoded in the script (`cap[...]`, keyed by the `## ` titles of `INDEX.md`): if they change in "Compaction", or a section is renamed, change them there too.
 
-The hooks don't interfere with non-wiki sessions: the check on `hot.md` / `.git` silently fails outside the meta-layer.
+The `Stop` hooks measure, they don't block (no `exit 2`). Their output does **not** reach the model: for a `Stop` hook that exits 0, Claude Code writes stdout to the debug log only. Making it reach the model takes JSON output (`hookSpecificOutput.additionalContext`), which also gives the model another turn.
+
+The hooks find the vault root with git, so they work from a session started in any subfolder, and they stay silent outside the meta-layer (no `hot.md` there).
+
+**`.claude/hooks/lint-scan.py` is *not* a runtime hook** (it isn't in `settings.json`): it's the **measuring tool** of the `/lint` skill — checks 1-3 and 10-11 (orphans, broken wikilinks, frontmatter, stagnant seeds, open callouts), plus hypothesis decay and the `hot.md` and `lessons.md` caps. It's a committed file because a scratchpad is per-session: a scanner left there is gone by the next lint.

@@ -1,3 +1,9 @@
+---
+type: log
+description: Lean audit trail of the operations on this wiki — one line per operation
+status: evergreen
+---
+
 # Operation Log
 
 > Lean audit trail of every operation on this wiki — **one line per operation**, not a journal.

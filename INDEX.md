@@ -23,7 +23,7 @@ status: evergreen
 
 - [[daily/2026-01-15|2026-01-15]] — example — _ACME kickoff, picked Obsidian over Notion_
 
-<!-- Keep newest first. When this list grows past ~30, promote to `daily/INDEX.md`. -->
+<!-- Newest first, at most 14: older ones are browsed from the `daily/` folder (`.claude/hooks/check-index-caps.sh` measures it). -->
 
 ---
 
@@ -66,7 +66,7 @@ Full catalog: [[people/INDEX|people/INDEX]]
 
 ## Recently ingested
 
-<!-- Entries added by `/ingest`. Newest first. -->
+<!-- Entries added by `/ingest`. Newest first, at most 14. -->
 
 - [[raw/articles/2026-01-10-remote-first-principles|Remote-First Principles]] — ingested as example
 - [[raw/meetings/2026-01-15-acme-kickoff|ACME kickoff]] — ingested as example
@@ -77,6 +77,6 @@ Full catalog: [[people/INDEX|people/INDEX]]
 
 - [[hot.md|hot.md]] — hot cache (auto-loaded at session start)
 - [[log|log.md]] — append-only operation log
-- [[lessons|lessons.md]] — mistake → correction pairs
+- [[lessons|lessons.md]] — method corrections, one line each (loaded every session)
 - [[CLAUDE|CLAUDE.md]] — root instructions
 - [[.claude/CLAUDE|.claude/CLAUDE.md]] — workflow orchestration

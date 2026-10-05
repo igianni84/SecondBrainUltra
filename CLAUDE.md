@@ -59,6 +59,7 @@ Everything entering from outside. **The LLM reads but never modifies.**
 - `CLAUDE.md` (this file) — top-level instructions, owner identity, inviolable rules
 - `.claude/CLAUDE.md` — detailed workflow orchestration (plan mode, persistence, decision journal)
 - `.claude/skills/` — custom slash commands (`/daily-log`, `/end-session`, `/ingest`, `/lint`, …)
+- `.claude/hooks/` — `lint-scan.py` (the scanner of `/lint`) and `check-index-caps.sh` (a `Stop` hook)
 - `.claude/memory/` — team memory (committed, shared across contributors)
 
 ---
@@ -71,7 +72,7 @@ This vault is also an Obsidian vault (`.obsidian/` is pre-configured). To get gr
 - **YAML frontmatter** on every wiki page:
   ```yaml
   ---
-  type: meeting | decision | knowledge | person | initiative | daily | weekly | plan | client | meta
+  type: meeting | decision | knowledge | hypothesis | rule | person | initiative | daily | weekly | plan | client | meta | lessons | log | log-archive | lint-report
   date: YYYY-MM-DD
   status: <see status lifecycle below>
   tags: [topic1, topic2]
@@ -80,6 +81,7 @@ This vault is also an Obsidian vault (`.obsidian/` is pre-configured). To get gr
   ```
 - **Naming**: `kebab-case`, dates `YYYY-MM-DD`, slugs short and meaningful.
 - **PNG/JPG are included** in the repo (Obsidian assets); PDF/XLSX/PPTX/DOCX **are not** (see `.gitignore`).
+- **Outside this enum**: `.claude/memory/` has its own schema (`user | feedback | project | reference`, see `.claude/CLAUDE.md` → Team Memory). Schema-layer files (`CLAUDE.md`, `README.md`, `MEMORY.md`, `SKILL.md`) need no frontmatter.
 
 ### Status lifecycle (`status` field)
 
@@ -123,7 +125,7 @@ The file `hot.md` at the root is a ~500-word cache of the most recent context. *
 4. **Active Threads** — next steps, rollovers, blockers, operational flags
 5. **Open Patterns / Hypotheses** — patterns to monitor or to promote to rules
 
-**Auto-loaded** at every session start via the `SessionStart` hook in `.claude/settings.json`. Eliminates the need for a manual recap.
+**Auto-loaded** at every session start, after `/clear` and after compaction, via the `SessionStart` hook in `.claude/settings.json`. Eliminates the need for a manual recap.
 
 **Updated by**: `/end-session`, `/daily-log`, `/log-meeting`, `/log-decision`, optionally `/ingest` and `/new-initiative` (only if the operation changes Key Recent Facts or Active Threads).
 
@@ -189,9 +191,10 @@ Every operation appends **one line** to `log.md` (a lean audit trail, not a jour
 | `.claude/memory/MEMORY.md` | At the start of every session |
 | `INDEX.md` | To orient yourself in the wiki |
 | `log.md` (last entries) | To know what happened recently |
-| `lessons.md` | To avoid repeating corrections already made |
 | `.claude/CLAUDE.md` | For workflow details |
 | `{macro-area}/CLAUDE.md` | When you work on a macro area |
+
+Method corrections, loaded every session together with this file: @lessons.md
 
 ---
 

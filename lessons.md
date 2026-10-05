@@ -1,21 +1,20 @@
-# Lessons Learned
+---
+type: lessons
+description: Method corrections for the AI collaborator, one line per rule
+---
 
-> Mistake → correction pairs. Read at session start to avoid repeating.
-> Added to by the LLM after every correction from the user.
->
-> Format:
-> ```
-> ## YYYY-MM-DD — {short title}
-> **Mistake**: {what I did wrong}
-> **Correction**: {what I should have done}
-> **Rule**: {generalized guidance for future sessions}
-> ```
+# Lessons — method corrections
 
-<!--
-  Starter lessons (delete/replace as you accumulate your own):
--->
+Method corrections: what to do instead of a mistake already made. They are prescriptive, and they load every session: the root `CLAUDE.md` imports this file with `@lessons.md`.
 
-## {{YYYY-MM-DD}} — {{example: fabricated a name that wasn't in the source}}
-**Mistake**: I wrote `jane-smith` as an attendee when the transcript only listed initials `JS`.
-**Correction**: When names are ambiguous, flag with `_(to confirm)_` and ask the user before creating a `people/` page.
-**Rule**: Never cristallize a name from an ambiguous source. Flag inline with `_(to confirm)_` or use a `> [!gap]` callout.
+A rule is one line: "- **Rule in imperative form** — when it applies (dates of the cases)", at most 40 words. No why, no story: the episode goes in that day's daily. A new case of an existing rule only adds its date.
+
+A correction goes in one place only. If it's a preference of the user (style, documents, communication), it goes in memory. Only method mistakes with no other home stay here.
+
+Cap: 3,000 words (`lint-scan.py` measures it). Above the cap, what's no longer needed goes first.
+
+<!-- Example rule: delete or replace it as you collect your own. Group the rules under topic headings. -->
+
+## Names and sources
+
+- **Don't crystallize a name from an ambiguous source: mark it `_(to confirm)_` and ask before creating a `people/` page** — when a transcript gives only initials or a partial name (2026-01-15)

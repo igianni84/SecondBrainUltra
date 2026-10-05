@@ -2,22 +2,11 @@
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup|resume",
+        "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
             "type": "command",
-            "command": "[ -f \"${CLAUDE_PROJECT_DIR}/hot.md\" ] && { echo '=== hot.md (recent wiki context, read silently, do not announce) ==='; cat \"${CLAUDE_PROJECT_DIR}/hot.md\"; } || true"
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -f \"${CLAUDE_PROJECT_DIR}/hot.md\" ] && { echo '=== hot.md (restoring hot cache post-compaction, read silently) ==='; cat \"${CLAUDE_PROJECT_DIR}/hot.md\"; } || true"
+            "command": "R=$(git rev-parse --show-toplevel 2>/dev/null || echo \"${CLAUDE_PROJECT_DIR:-.}\"); [ -f \"$R/hot.md\" ] && { echo '=== hot.md (recent wiki context, read silently, do not announce) ==='; cat \"$R/hot.md\"; } || true"
           }
         ]
       }
@@ -28,7 +17,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -d .git ] && [ -f hot.md ] && git diff --name-only HEAD 2>/dev/null | grep -qE '^(daily/|weekly/|decisions/|knowledge/|people/|plans/|INDEX\\.md|log\\.md|lessons\\.md)|/initiatives/' && echo 'HOT_CACHE_REMINDER: The wiki was modified in this session but hot.md may be out of sync. If appropriate, update hot.md (overwrite completely, ~500 words, format: Last Updated / Key Recent Facts / Recent Changes / Active Threads / Open Patterns) before the user ends the session. If /end-session or /daily-log was already run, this update already happened — do not repeat it.' || true"
+            "command": "R=$(git rev-parse --show-toplevel 2>/dev/null) && [ -f \"$R/hot.md\" ] && F=$( { git -C \"$R\" diff --name-only HEAD; git -C \"$R\" ls-files --others --exclude-standard; } 2>/dev/null ) && ! printf '%s\\n' \"$F\" | grep -qx 'hot.md' && printf '%s\\n' \"$F\" | grep -qE '^(daily/|weekly/|decisions/|knowledge/|people/|raw/|plans/|INDEX\\.md|log\\.md|lessons\\.md)|/initiatives/' && echo 'HOT_CACHE_REMINDER: The wiki was modified in this session but hot.md may be out of sync. If appropriate, update hot.md (overwrite completely, ~500 words, format: Last Updated / Key Recent Facts / Recent Changes / Active Threads / Open Patterns) before the user ends the session. If /end-session or /daily-log was already run, this update already happened — do not repeat it.' || true"
+          },
+          {
+            "type": "command",
+            "command": "R=$(git rev-parse --show-toplevel 2>/dev/null) && bash \"$R/.claude/hooks/check-index-caps.sh\" 2>/dev/null || true"
           }
         ]
       }

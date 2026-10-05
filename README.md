@@ -12,7 +12,7 @@ SecondBrainUltra is a **template**, not a live system. You clone it, fill in you
 Most "second brain" templates are just folder structures. This one ships the *behavior* too:
 
 - **8 slash commands** (`/daily-log`, `/end-session`, `/ingest`, `/lint`, `/log-meeting`, `/log-decision`, `/new-initiative`, `/weekly-review`) that do the bookkeeping for you.
-- **3 session hooks** that auto-load a "hot cache" at session start, restore it after compaction, and warn you before you lose context.
+- **A session hook** that loads a "hot cache" at startup, after `/clear` and after compaction, so you never recap by hand; plus a committed **lint scanner** that measures orphans, broken links, frontmatter and caps.
 - **Obsidian callouts** (`[!contradiction]`, `[!gap]`, `[!stale]`, `[!key-insight]`) with custom CSS for semantic flagging.
 - **Status lifecycle** (`seed` → `developing` → `mature` → `evergreen`) tracked in frontmatter so stale pages get flagged automatically.
 - **Promotion pipeline** for domain knowledge: observation → hypothesis → rule (confirmed 3×).
@@ -30,10 +30,11 @@ SecondBrainUltra/
 ├── INDEX.md                     # Primary catalog
 ├── hot.md                       # Hot cache (~500 words, auto-loaded at session start)
 ├── log.md                       # Append-only op log
-├── lessons.md                   # Mistake → correction pairs
+├── lessons.md                   # Method corrections, one line each (loaded every session)
 ├── .claude/
 │   ├── CLAUDE.md                # Workflow orchestration (plan mode, memory, knowledge)
-│   ├── settings.json            # 3 hooks: SessionStart / PostCompact / Stop
+│   ├── settings.json            # Hooks: SessionStart (loads hot.md) / Stop (checks)
+│   ├── hooks/                   # lint-scan.py (the /lint scanner), check-index-caps.sh
 │   ├── memory/                  # Team memory (committed)
 │   └── skills/                  # 8 slash commands
 ├── .obsidian/                   # Vault config + custom callouts snippet
@@ -79,7 +80,7 @@ Point Obsidian at the folder. The vault is pre-configured (`.obsidian/` is commi
 claude
 ```
 
-Claude reads `CLAUDE.md`, loads `hot.md` via the `SessionStart` hook, and knows your 8 slash commands. Try `/end-session` when you wrap up your first session — it writes the daily log, commits, and pushes.
+Claude reads `CLAUDE.md` (which imports `lessons.md`), loads `hot.md` via the `SessionStart` hook, and knows your 8 slash commands. Try `/end-session` when you wrap up your first session — it writes the daily log, commits, and pushes.
 
 ### 5. (Optional) Rename the example macro area
 
