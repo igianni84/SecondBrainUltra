@@ -35,4 +35,4 @@ _(empty)_
 
 ## Template
 
-New initiatives use [[WORK/initiatives/_template|_template.md]] as the starting skeleton. `/new-initiative` copies from the template and fills frontmatter via interview.
+New initiatives use [[WORK/initiatives/_template|_template.md]] as the starting skeleton. `/new-initiative` drafts the card from the session, on top of the template, and asks only for what is missing.

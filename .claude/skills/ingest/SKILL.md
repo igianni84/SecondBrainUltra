@@ -7,89 +7,57 @@ description: Process a file in `raw/` (article, note, screenshot, transcript) an
 
 ## Purpose
 
-The `raw/` layer is immutable. `/ingest` reads a file in `raw/`, extracts useful content, integrates it into the wiki (`knowledge/`, `decisions/`, `people/` as relevant), and updates the indexes — **without burning the main context** by writing every file inline.
+`/ingest` reads a file in `raw/articles/`, `raw/notes/` or `raw/assets/`, brings its useful content into the wiki (`knowledge/`, and `decisions/` or `people/` when relevant) and updates the indexes. The file in `raw/` stays as it is: that layer is read-only. For `raw/meetings/` use `/log-meeting`.
 
-When the ingest produces 2+ isolated wiki files, MAIN fans out one sub-agent per file, in parallel. Each sub-agent owns exactly one file; MAIN owns the shared catalog files. This is the same architecture as `/log-meeting`, slimmed down because `/ingest` typically touches fewer files.
-
-## Input
-
-`/ingest <path>` where `<path>` is a file inside `raw/articles/`, `raw/notes/`, or `raw/assets/`.
-
-For `raw/meetings/`, use `/log-meeting` instead (it has dedicated logic).
-
-## Architecture (4 phases)
+Four phases: MAIN reads and proposes; sub-agents write the isolated files in parallel; MAIN writes the shared files; MAIN recaps.
 
 ```
-PHASE 1 — MAIN: read the raw + discuss + decide which wiki files result
-PHASE 2 — FAN-OUT: N parallel sub-agents, each on ONE isolated file
-PHASE 3 — MAIN: write SHARED files sequentially (sub-index → root INDEX → hot.md → log.md)
-PHASE 4 — MAIN: recap to the user
-```
-
-### Isolated vs. shared files (the taxonomy that makes fan-out safe)
-
-```
-ISOLATED files (parallelizable — one sub-agent each):
+ISOLATED files (one sub-agent each):
 - knowledge/{domain}/knowledge.md   (merge — append a titled entry)   — almost always
-- knowledge/{domain}/hypotheses.md  (merge — if there's an insight to confirm)   [optional]
-- decisions/YYYY-MM-DD-{slug}.md    (create)   [optional, if the user decides something]
-- people/{slug}.md                  (create)   [optional, if a new relevant person appears]
+- knowledge/{domain}/hypotheses.md  (merge — if there's an insight to confirm)
+- decisions/YYYY-MM-DD-{slug}.md    (create — if the user decides something; slug of at most 6 words)
+- people/{slug}.md                  (create — if a new relevant person appears)
 
 SHARED files (MAIN only, at the end, sequential):
-- knowledge/INDEX.md   (if a domain was touched)
-- decisions/INDEX.md   (if a decision was created)
-- people/INDEX.md      (if a new person was created)
+- knowledge/INDEX.md, decisions/INDEX.md, people/INDEX.md — the ones touched
 - INDEX.md (root)
 - hot.md               (if confirmed by the user)
 - log.md
 ```
 
-**Why the split**: the shared catalog files (`INDEX.md`, the sub-indexes, `hot.md`, `log.md`) are written **only by MAIN** to avoid race conditions — two parallel sub-agents editing the same INDEX would clobber each other's writes. Isolated files have a single writer each, so they are safe to parallelize. Sub-agents therefore never touch shared files; they return their cross-references as **text** for MAIN to apply in PHASE 3.
+Isolated files have one writer each, so they are safe in parallel. The shared files have a single writer, MAIN: two sub-agents editing the same index would clobber each other.
 
 ---
 
-## PHASE 1 — Read & discuss (MAIN)
+## PHASE 1 — Read & propose (MAIN)
 
 ### 1.1 Read the raw
-Open the file and read it in full. If it's an unreadable binary asset (PDF, image, binary `.eml`), ask the user for a manual extraction or a description.
+Open the file and read it in full. PDFs and images are read with the Read tool, a long PDF in page ranges. Ask the user only if the file can't be opened.
 
-### 1.2 Discuss with the user
-Summarize the 3–5 key takeaways. Then ask:
-- "Which knowledge domains does this touch?" (suggest based on content)
-- "Is there a decision to extract? Or is it purely informational?"
-- "New people to track?" (names not already in `people/`)
-- "Update `hot.md`?" (if the insight is strategic) — default yes for articles/notes that change Active Threads or Key Recent Facts; no for purely tactical ingests.
+### 1.2 Propose the plan
+Summarize the 3–5 key takeaways and, below them, the plan you propose:
+- the knowledge domains touched
+- whether there is a decision to extract, or it's purely informational
+- new people, i.e. names with no page in `people/`
+- whether `hot.md` changes: yes when the ingest touches *Active Threads* or *Key Recent Facts*
 
-Wait for guidance before launching the fan-out.
+The user confirms or corrects in one round; then the fan-out starts.
 
-### 1.3 Decide which files result
-Map the takeaways onto the **isolated vs. shared** taxonomy above. Count the isolated files — that count drives the fan-out decision in PHASE 2.
+### 1.3 Count the isolated files
+Map the takeaways onto the taxonomy above. The count drives PHASE 2:
+- **0** — the user says it's purely informational: skip PHASES 2–3 and append only the `log.md` line (`… → ingest skipped — informational`).
+- **1** — MAIN writes it directly, then PHASE 3.
+- **2+** — fan out, one sub-agent per file.
 
-> **Status lifecycle**: every NEW knowledge/weekly/daily/plan page starts with `status: seed` in frontmatter. The lint flags it if it stays `seed` for more than 30 days. Values: `seed | developing | mature | evergreen`. Do not apply this to types with a domain-specific status (decision: active/superseded; initiative: active/paused/done; client: active/dormant/prospect; person: active/dormant/archived).
-
-### 1.4 Degenerate case (no wiki page)
-If the raw is purely informational and yields **no** wiki page (the user says "it's just informational, don't write anything"), close **without fan-out** and append only the single `log.md` line — e.g. `… · ingest · raw/articles/{file} → ingest skipped — informational`. Skip PHASES 2–3.
+> **Status lifecycle**: every NEW knowledge/weekly/daily/plan page starts with `status: seed` in frontmatter. The lint flags it if it stays `seed` for more than 30 days. Values: `seed | developing | mature | evergreen`. Types with a domain-specific status keep theirs (decision: active/superseded; initiative: active/paused/done; client: active/dormant/prospect; person: active/dormant/archived).
 
 ---
 
 ## PHASE 2 — Fan-out (MAIN)
 
-### Fan-out threshold
-Fan-out pays off **only at 2+ isolated files**. For 0–1 isolated files, fall back to **sequential MAIN-only** writing — spawning a single sub-agent is pure overhead. So:
-- **0 isolated files** → degenerate case (see 1.4), log line only.
-- **1 isolated file** → MAIN writes it directly, then proceeds to PHASE 3.
-- **2+ isolated files** → fan out, one sub-agent per isolated file.
+Launch all sub-agents in **one single message** with N parallel `Agent` tool calls, `subagent_type: general-purpose`. A sub-agent sees neither this `SKILL.md` nor any `CLAUDE.md`: its briefing carries the frontmatter schema, the wiki conventions, the return format and the scope block. Pass it the relevant extract of the raw, not the whole file.
 
-### Golden rule
-**One single message** with N parallel `Agent` tool calls. Never sequential.
-
-### Sub-agent type
-`subagent_type: general-purpose` (has Read/Write/Edit access).
-
-### Self-contained briefings
-Sub-agents do **not** see this `SKILL.md` or any `CLAUDE.md`. Each briefing must be self-contained: it carries the frontmatter schema, the wiki conventions, the return format, and the scope-prohibition block below. Pass only the relevant raw extract, not the whole raw file, unless the whole file is needed.
-
-### Scope-prohibition block (paste into EVERY briefing, verbatim-style)
+### Scope-prohibition block (paste into EVERY briefing)
 
 ```
 SCOPE — READ CAREFULLY:
@@ -148,7 +116,7 @@ Return format:
 - The target path
 ```
 
-### Briefing template — Hypothesis sub-agent (if applicable)
+### Briefing template — Hypothesis sub-agent
 
 ```
 Goal: add a hypothesis to knowledge/{domain}/hypotheses.md for "{hypothesis title}" — to be
@@ -173,7 +141,7 @@ status: seed
 Entry to add:
 ### Hypothesis: {title}
 {2–3 descriptive lines}
-- **Confirmations: 1/3**
+- Confirmations: 1/3
   - YYYY-MM-DD: observed in [[raw/{type}/{file}|{source title}]]
 - **Anti-pattern**: {if relevant, what would contradict the hypothesis}
 
@@ -260,69 +228,40 @@ Return format:
 
 ---
 
-## PHASE 3 — Aggregate & finalize (MAIN, sequential)
+## PHASE 3 — Shared files (MAIN, sequential)
 
-Sub-agents only wrote their isolated files and returned cross-references as text. MAIN now writes the shared files, **in this order**.
-
-### 3.0 Verify the fan-out
-Confirm **every** sub-agent returned success before writing anything shared. If one failed, **retry only that one** (re-issue its briefing). Don't write `log.md` until all isolated files exist.
+Starts when **every** sub-agent has returned success. If one failed, retry only that one. Wikilinks go only to files that exist (`ls` when unsure).
 
 ### 3.1 Sub-index updates
-- **`knowledge/INDEX.md`**: if a domain was touched (add a link to the `knowledge.md` if NEW; refresh the last-touched date if you applied the pattern).
-- **`decisions/INDEX.md`**: if a decision was created.
-- **`people/INDEX.md`**: if a new person was created.
+- **`knowledge/INDEX.md`**: the link to the `knowledge.md`, if the file is new.
+- **`decisions/INDEX.md`**: the row of the decision, if one was created.
+- **`people/INDEX.md`**: the row of the new person.
 
 ### 3.2 Root INDEX
-`INDEX.md` — update:
-- The "Recently ingested" section (articles or notes; keep only the most recent ~10–14).
-- The "Cross-area decisions" section (top-5 only) if a decision deserves visibility there.
+`INDEX.md`:
+- "Recently ingested": the new entry on top with a 1-line gloss. The section keeps the latest 14: the oldest leaves whole.
+- "Decisions": only if the decision belongs among the 5 shown there.
 
-### 3.3 hot.md (optional)
-If the ingest produced strategic insights or changes Active Threads / Key Recent Facts, overwrite the 5 sections of `hot.md` (~500 words). If it's purely tactical, skip it — just the log line.
+Done when `bash .claude/hooks/check-index-caps.sh` prints nothing: it measures the caps, and what it reports gets fixed before the step closes.
 
-⛔ **The cache replaces, it doesn't accumulate**: the new fact enters *Key Recent Facts* in place of an old one, not on top. `updated:` is only the date. Before closing: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
+### 3.3 hot.md
+Only if confirmed in PHASE 1: the new fact enters in place of an older one, following `CLAUDE.md` §4bis. Done when `wc -w hot.md` gives at most 700; if everything is needed, go over and tell the user how many words and why.
 
-Default: update `hot.md` if the user confirmed in PHASE 1.
-
-### 3.4 log.md (append — ONE line)
-`log.md` is a **lean audit trail: one line per operation**, grouped under monthly headers `## YYYY-MM`.
-
-Append a **single line** under the current month's header (`## YYYY-MM` — create it if it doesn't exist yet). No per-entry `## [...]` header, no multi-line "files touched:" list, no multi-bullet block: summarize the key files/outcome compactly inside the one line.
+### 3.4 log.md
+One line under the current month's header `## YYYY-MM` (create it if missing), with the time from `date +%H:%M`:
 
 ```
-- YYYY-MM-DD HH:MM · ingest · raw/{type}/{file} → {N knowledge + K hypotheses (+1 decision/person if any); domains touched}
+- YYYY-MM-DD HH:MM · ingest · raw/{type}/{file} → {N knowledge + K hypotheses (+1 decision/person if any); domains touched — ≤15 words}
 ```
 
 ---
 
 ## PHASE 4 — Recap to the user
 
-Short summary in chat:
-- **File read**: path
-- **Files updated**: list
-- **Knowledge entries created/updated**: with promotion count (1/3, 2/3, 3/3 ready)
-- **Decisions**: if created, with wikilink
-- **People**: if created
-- **hot.md updated**: yes/no + reason
-- **Suggested follow-up ingestions** (if any emerge from the content)
+- **File read** and **files updated**
+- **Knowledge entries and hypotheses**, with the confirmation count (1/3, 2/3, 3/3 ready)
+- **Decisions** and **people** created, with wikilinks
+- **hot.md**: updated or not, and why
+- **Suggested follow-up ingestions**, if the content points to any
 
----
-
-## What NOT to do
-
-- **NEVER** modify the file in `raw/` (it's immutable by design).
-- **NEVER** launch sub-agents sequentially — always one single parallel multi-call.
-- **NEVER** let sub-agents write shared files (`log.md`, `INDEX.md`, the sub-indexes, `hot.md`): race condition.
-- **NEVER** pass the whole raw to a sub-agent if a relevant extract is enough.
-- Do not create knowledge entries if the user says "it's purely informational".
-- Do not invent cross-references: only wikilink to files that EXIST (check with `ls` if unsure).
-- Do not auto-update initiatives — that's the domain of `/log-meeting` or an explicit action.
-
----
-
-## Operational notes on fan-out
-
-- **When NOT to fan out**: an ingest that touches a single isolated file (e.g. just an append to `knowledge/ai-workflows/knowledge.md`) → fan-out is overhead. Fall back to the sequential MAIN-only pattern.
-- **Threshold**: fan-out pays off at 2+ isolated files. 1 file → sequential MAIN. 2+ files → parallel fan-out.
-- **Self-contained briefings**: sub-agents do NOT see this `SKILL.md` or any `CLAUDE.md`. The briefing MUST include the frontmatter schema, the conventions, the expected wikilinks, and the scope-prohibition block.
-- **Post-fan-out verification**: confirm all sub-agents returned success before writing `log.md`. If one failed, retry only that one.
+Initiatives are updated by `/log-meeting` or on an explicit request, not by an ingest.

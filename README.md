@@ -36,7 +36,8 @@ SecondBrainUltra/
 │   ├── settings.json            # Hooks: SessionStart (loads hot.md) / Stop (checks)
 │   ├── hooks/                   # lint-scan.py (the /lint scanner), check-index-caps.sh
 │   ├── memory/                  # Team memory (committed)
-│   └── skills/                  # 8 slash commands
+│   ├── skills/                  # 8 slash commands
+│   └── tools/                   # archive-decisions.py (keeps decisions/INDEX.md under its cap)
 ├── .obsidian/                   # Vault config + custom callouts snippet
 ├── raw/                         # Immutable inbox (meetings, articles, notes, assets)
 ├── daily/                       # Daily digests

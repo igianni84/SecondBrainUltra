@@ -24,6 +24,8 @@ Do NOT log for:
 ## File naming
 
 `decisions/YYYY-MM-DD-{topic-slug}.md`
+
+The slug has at most 6 words: the topic, not the sentence. The full sentence is the file's `#` title. Example: `2026-01-15-pick-obsidian-over-notion.md`. A long slug makes every wikilink to the decision long, and the indexes grow with it.
 - Date = when the decision was made (not when written up)
 - Slug = kebab-case, short, describes *the decision*, not the problem
 

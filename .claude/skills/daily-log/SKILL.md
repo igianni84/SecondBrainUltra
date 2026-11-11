@@ -7,37 +7,34 @@ description: Create or update the daily log for the current session in `daily/YY
 
 ## Purpose
 
-Produce or update `daily/YYYY-MM-DD.md` (today's date) by synthesizing what happened in the current session. This is the **primary way** the user keeps persistent memory of daily work (the "2D" model — I draft, the user confirms/corrects).
+Produce or update `daily/YYYY-MM-DD.md` (today's date) by synthesizing what happened in the current session. This is the **primary way** the user keeps persistent memory of daily work (the "2D" model — I draft, the user confirms/corrects). The skill touches four files: the daily, `INDEX.md`, `hot.md`, `log.md`.
 
 ## Strict workflow
 
 ### Step 1 — Determine the date and path
-- Today's date in `YYYY-MM-DD` format (use `date +%Y-%m-%d` if needed)
+- Today's date in `YYYY-MM-DD` format (`date +%Y-%m-%d`). If the session ran past midnight, use the date of the **majority** of the work, and ask if unclear.
 - Path: `daily/YYYY-MM-DD.md`
 
 ### Step 2 — Check existence
-- If the file **already exists**: read it. Likely a mid-day checkpoint. I must **integrate** what happened after, not overwrite.
+- If the file **already exists**: read it. It's a mid-day checkpoint or another session's work. **Integrate** what happened after; the rest stays as it is.
 - If it **doesn't exist**: create from scratch.
 
 ### Step 3 — Synthesize the current session
-Mentally re-read the current conversation. Extract and organize:
+From the current conversation, six sections:
 
-1. **What I did** (concrete actions, files touched at macro level)
-2. **Decisions taken** (wikilink to `decisions/...` if I created formal ones)
-3. **Meetings / relevant interactions** (wikilink to `raw/meetings/...` if I ingested any)
+1. **What I did** (concrete actions, files touched at macro level; one subsection per macro area if the session spanned several)
+2. **Decisions taken** (wikilink to `decisions/...` if formal ones were created)
+3. **Meetings / relevant interactions** (wikilink to `raw/meetings/...`)
 4. **Learnings** (insights that emerged during the session)
 5. **Next steps** (todos spilling to the next day)
-6. **Free notes** (optional, for uncategorizable items)
+6. **Free notes** (optional)
+
+Only what actually happened in the session goes in.
 
 ### Step 4 — Show the draft to the user
-**Don't write the file silently.** First show the user the draft and ask for confirmation or corrections:
-
-> "Here's the draft of today's daily log. Confirm, or do you want to add/correct anything?"
-
-Wait for the response. Iterate if needed.
+Show the draft and wait for confirmation or corrections; iterate if needed. If the session is empty (the user invoked `/daily-log` right after opening), ask whether to create a placeholder or skip.
 
 ### Step 5 — Write the file
-Strict frontmatter:
 
 ```yaml
 ---
@@ -48,64 +45,32 @@ session-tag: {short session identifier, optional}
 ---
 ```
 
-Body in the 6 standard sections above.
+Body: the six sections of Step 3.
 
 ### Step 6 — Update INDEX.md
-Add an entry under `## Daily logs` in `INDEX.md` (root):
+Under `## Daily logs` in `INDEX.md` (root), newest on top:
 
 ```markdown
 - [[daily/YYYY-MM-DD|YYYY-MM-DD]] — {context} — {1-line tagline of the day}
 ```
 
-**Keep reverse-chronological** (newest on top), **at most 14 entries** with a 1-line gloss (`.claude/hooks/check-index-caps.sh` measures it). The entry that falls off isn't shortened: it leaves. Older dailies are browsed from the `daily/` folder, and their weekly links them.
+If the day is already listed, update its line. The section keeps the latest 14 entries with a 1-line gloss: the entry that falls off leaves whole. Older dailies are browsed from the `daily/` folder, and their weekly links them.
+
+Done when `bash .claude/hooks/check-index-caps.sh` prints nothing: it measures the caps, and what it reports gets fixed before the step closes.
 
 ### Step 7 — Update `hot.md` (hot cache)
-`hot.md` is the ~500-word cache read by the `SessionStart` hook. It must be **overwritten completely** (not appended) — it's a cache, not a journal.
+Overwrite `hot.md` completely, following `CLAUDE.md` §4bis: five sections with their caps, and what comes in takes the place of what the next session no longer needs. In the frontmatter only `updated:` changes, and it holds only the date. A pattern that lives only in `hot.md` is written to `knowledge/{domain}/hypotheses.md` before it leaves.
 
-⛔ **Eviction rule**: the cache doesn't accumulate, it replaces. When a new fact comes in, what the next session no longer needs goes out. The mark of a journal isn't length: it's yesterday's session kept under today's (the journal is the `daily/` you just wrote). Evicted content isn't lost: it lives in the daily, in `decisions/`, in `knowledge/`, in the initiatives.
-
-**Check before closing the step**: `wc -w hot.md` → **≤ 700 words**. Under the cap the cache can grow. Over it, what's no longer needed goes first; if everything is needed, go over and tell the user how many words and why.
-
-Overwrite `hot.md` with frontmatter:
-
-```yaml
----
-type: meta
-description: Hot cache — recent-context digest (~500 words)
-updated: YYYY-MM-DD
----
-```
-
-⛔ `updated:` is **only the date**. Never a chain of sessions separated by `//`: it's how that one field grows to hundreds of words.
-
-Body in 5 sections, with caps:
-- **Last Updated** (1–2 lines): date + session tagline
-- **Key Recent Facts** (**max 5 bullets**, ≤60 words each): strategic facts from today and the last 2–3 days (wikilinks to decisions/ and key meetings)
-- **Recent Changes** (**max 3 bullets**): created / updated / new sub-index — only the last 1–2 sessions
-- **Active Threads** (**max 4 bullets**): next steps, rollovers, open blockers, operational flags (e.g. declared stress)
-- **Open Patterns / Hypotheses** (**≤60 words, pointers only**): links to the active rules/hypotheses in `knowledge/`. ⛔ Pattern tracking (`n/3` counts, dated confirmations) lives in `knowledge/{domain}/hypotheses.md`, **never here**. If a pattern exists only in `hot.md`, write it in `knowledge/` *before* evicting it.
-
-Format and caps reference: `CLAUDE.md` §4bis. If unsure about tone, read the current `hot.md` to calibrate.
+Done when `wc -w hot.md` gives at most 700. If everything is needed, go over and tell the user how many words and why.
 
 ### Step 8 — Append to log.md
-Append **a single line** to `log.md` (root), under the current month's header `## YYYY-MM` (create it if missing — `log.md` holds only the current month):
+One line in `log.md` (root), under the current month's header `## YYYY-MM` (create it if missing), with the time from `date +%H:%M`:
 
 ```
 - YYYY-MM-DD HH:MM · daily-log · {target} → {outcome ≤15 words}
 ```
 
+Called by `/end-session`, skip this step: the session gets one line, the `session-end` one.
+
 ### Step 9 — Confirm to the user
-Final summary: file created/updated + INDEX updated + hot.md updated + log appended. Nothing more.
-
-## Edge cases
-
-- **Empty session** (user invokes `/daily-log` right after opening, without having worked): ask if they want to create a placeholder anyway or skip.
-- **Date change during session** (e.g. work past midnight): use the date of the **majority** of the session, and ask if unclear.
-- **Session spanning contexts** (multiple macro areas): use `context: mixed` and create distinct subsections under "What I did".
-
-## What NOT to do
-
-- Do not overwrite an existing daily without reading and integrating first.
-- Do not invent decisions or meetings that didn't actually happen in the session.
-- Do not skip user confirmation before writing.
-- Do not create files in other folders (this skill's responsibility is limited to daily/, INDEX, hot.md, log).
+Daily, INDEX, `hot.md`, log: one line each.

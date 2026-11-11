@@ -17,15 +17,7 @@ Wrapper that ensures every working session **does not get lost**:
 ## Strict workflow
 
 ### Step 1 — Run `/daily-log`
-Invoke/execute the `/daily-log` workflow (see `.claude/skills/daily-log/SKILL.md`):
-- Determine date
-- Synthesize session
-- Show draft to user
-- Wait for confirmation
-- Write `daily/YYYY-MM-DD.md`
-- Update `INDEX.md` (Daily logs section)
-- Update `hot.md` (hot cache ~500 words, **cap 700**: check with `wc -w hot.md`. The cache replaces, it doesn't accumulate; `updated:` is only the date, never a chain of sessions. Per-section caps in `CLAUDE.md` §4bis)
-- Append to `log.md`
+Run the `/daily-log` workflow (`.claude/skills/daily-log/SKILL.md`), all of it except its Step 8: the session gets one `log.md` line, the `session-end` one of Step 3 below.
 
 **Do not proceed to next steps until the user has confirmed the daily log.**
 
@@ -101,7 +93,7 @@ If push fails (divergence, authentication, network):
 ### Step 6 — Final summary
 Show the user:
 - Daily log: `daily/YYYY-MM-DD.md`
-- INDEX and log updated
+- INDEX, `hot.md` and log updated
 - Commit `<sha>` on the current branch
 - Push successful (or push status)
 - Any open todos for the next session

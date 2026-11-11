@@ -59,7 +59,8 @@ Everything entering from outside. **The LLM reads but never modifies.**
 - `CLAUDE.md` (this file) — top-level instructions, owner identity, inviolable rules
 - `.claude/CLAUDE.md` — detailed workflow orchestration (plan mode, persistence, decision journal)
 - `.claude/skills/` — custom slash commands (`/daily-log`, `/end-session`, `/ingest`, `/lint`, …)
-- `.claude/hooks/` — `lint-scan.py` (the scanner of `/lint`) and `check-index-caps.sh` (a `Stop` hook)
+- `.claude/hooks/` — `lint-scan.py` (the scanner of `/lint`) and `check-index-caps.sh` (a `Stop` hook, also run by the skills that write an index)
+- `.claude/tools/` — `archive-decisions.py` (moves the oldest rows of `decisions/INDEX.md` to its archive when the index goes over its cap)
 - `.claude/memory/` — team memory (committed, shared across contributors)
 
 ---

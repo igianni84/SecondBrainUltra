@@ -36,7 +36,7 @@ Glob `daily/YYYY-MM-DD.md` for each date in range [date-start, date-end].
 - Working days tracked (X/5 weekdays)
 - Decisions made (count entries in `decisions/` with dates in range)
 - Meetings logged (count files in `raw/meetings/` with dates in range)
-- Articles ingested (search log.md for "· ingest ·" entries in range)
+- Articles ingested (search `log.md` for "· ingest ·" entries in range, and `log/YYYY-MM.md` when the week touches an archived month)
 
 **Highlights** (what really happened):
 Aggregate by macro area (e.g. WORK, CLIENTS, VENTURES, LIFE). For each, 2–4 synthetic bullets.

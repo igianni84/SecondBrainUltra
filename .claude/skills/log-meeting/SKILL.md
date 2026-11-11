@@ -7,123 +7,82 @@ description: Process a Google Meet (or other call) transcript saved in `raw/meet
 
 ## Purpose
 
-Meeting transcripts are a rich source: they contain decisions made, per-person action items, and context for initiatives. This skill turns them into wiki artifacts **without burning the main context** writing files one by one. The isolated output files (a daily summary, a person page, a decision entry, an initiative update) are written by **parallel sub-agents**; the shared catalog files (sub-indexes, root `INDEX.md`, `hot.md`, `log.md`) are written by MAIN at the end.
+From a transcript in `raw/meetings/` this skill extracts decisions, action items and people, and updates the daily, the pages and the indexes. The transcript stays as it is: `raw/` is read-only.
+
+Four phases: MAIN reads and extracts; parallel sub-agents write the isolated files (daily, people, decisions, initiatives); MAIN writes the shared files (indexes, `hot.md`, `log.md`), which two concurrent writers would clobber; MAIN recaps.
 
 ## Input
 
-`/log-meeting <path>` where `<path>` is a file inside `raw/meetings/`, saved as the recording tool exported it: same file name, no frontmatter (`raw/` is immutable). Date, title and attendees come from the transcript's header.
-
-## Architecture (fan-out)
-
-Four cleanly separated phases:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│ PHASE 1 — MAIN: read + extract structured data                   │
-│   - reads the raw transcript exactly once                        │
-│   - extracts: participants, initiative(s), decisions, action     │
-│     items, people mentioned, emerging patterns, callout candidates│
-│   - decides which ISOLATED files will be written                  │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│ PHASE 2 — FAN-OUT: N parallel sub-agents (one per isolated file)  │
-│   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │
-│   │ daily/   │ │ people/X │ │decisions/│ │initiative│  (parallel)│
-│   └──────────┘ └──────────┘ └──────────┘ └──────────┘            │
-│   Each sub-agent: self-contained briefing → writes ONE file →    │
-│   returns a 1-line summary + the wikilinks/cross-refs it found   │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│ PHASE 3 — MAIN: aggregate + write shared files (sequential)      │
-│   1. touched sub-indexes (people/INDEX, decisions/INDEX, …)      │
-│   2. root INDEX.md                                               │
-│   3. hot.md (full overwrite, ~500 words)                         │
-│   4. log.md (one-line append)                                    │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│ PHASE 4 — MAIN: recap to the user                                │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Why split this way**: isolated files (`daily/`, `people/X`, `decisions/Y`, `WORK/initiatives/Z`) are independent → safe to write in parallel. Catalog files (`INDEX.md`, the sub-indexes, `hot.md`, `log.md`) are *shared* → if two sub-agents wrote them concurrently they would clobber each other (a real, repeatedly-observed race condition), so MAIN writes them sequentially at the end.
+`/log-meeting <path>` where `<path>` is a file inside `raw/meetings/`, saved as the recording tool exported it: same file name, no frontmatter. Date, title and attendees come from the transcript's header.
 
 ---
 
 ## PHASE 1 — Read & extract (MAIN)
 
 ### 1.1 Read the raw
-Open `raw/meetings/<path>` in full. If it's very long (>5000 words), that's fine — the read happens once. (Optionally delegate the first pass to an Explore sub-agent, then refine.)
+In full, once.
 
-### 1.2 Identify structure
-From the transcript's header (date, title, attendees) and content, extract:
-- **Initiative(s)** touched — verify each against `WORK/initiatives/INDEX.md` (or the relevant macro-area's `initiatives/INDEX.md`). Do not invent slugs.
-- **Participants** — verify whether each already has a page with `ls people/`. Before writing any name heard in the transcript, grep its stem (e.g. `marc` for Marcus) in `people/`, `aliases` included, and in the macro area's `CLAUDE.md`. A name found only in transcripts is a speech-to-text mangling: the mangled form goes into the `aliases` of the right card.
+### 1.2 Extract
+- **Initiative(s)** touched — verify each against `WORK/initiatives/INDEX.md` (or the relevant macro area's `initiatives/INDEX.md`).
+- **Participants** — check each for a page with `ls people/`. Before writing any name heard in the transcript, grep its stem (e.g. `marc` for Marcus) in `people/`, `aliases` included, and in the macro area's `CLAUDE.md`. A name found only in transcripts is a speech-to-text mangling: the mangled form goes into the `aliases` of the right card. A name that stays ambiguous is flagged inline with `_(to confirm)_` and asked to the user.
 - **Explicit decisions** (with a verbatim quote where possible).
-- **Action items** (owner + description + deadline if stated).
+- **Action items**: owner, what, deadline only if it was stated.
 - **NEW people** (names not in `people/`).
 - **Emerging patterns** — candidates for `knowledge/{domain}/`.
 - **Callout candidates** — `contradiction` / `gap` / `key-insight` inline.
 
+Only what was said goes in: no inferred action items, no estimated deadlines.
+
 ### 1.3 Decide which files to write
-Compile an internal plan like this:
 
 ```
-ISOLATED FILES (parallelizable — one sub-agent each):
-- daily/YYYY-MM-DD.md                          (create or merge)
-- people/jane-doe.md                           (merge — already exists)
-- people/{new-slug}.md                         (create)          [if any]
-- decisions/YYYY-MM-DD-{topic-slug}.md         (create) × N
-- WORK/initiatives/{slug}.md                   (merge)  × K
+ISOLATED FILES (one sub-agent each):
+- daily/YYYY-MM-DD.md                     (create or merge)
+- people/{slug}.md                        (merge if it exists, create if new)
+- decisions/YYYY-MM-DD-{slug}.md          (create) × N
+- WORK/initiatives/{slug}.md              (merge)  × K
 
 SHARED FILES (MAIN, at the end, sequential):
-- decisions/INDEX.md          (if N > 0)
-- people/INDEX.md             (if a new person was created)
-- WORK/initiatives/INDEX.md   (if K > 0)
+- decisions/INDEX.md, people/INDEX.md, WORK/initiatives/INDEX.md — the ones touched
 - INDEX.md (root)
 - hot.md
 - log.md
 ```
 
+A decision's slug has at most 6 words (`decisions/README.md`): the topic, not the sentence. The full sentence is the file's `#` title.
+
+With a single isolated file — a short call, one decision, no new people — MAIN writes it directly, without sub-agents. If a new workstream emerges, propose `/new-initiative` and wait for a yes.
+
 ### 1.4 Controversial / strategic decisions → confirm BEFORE the fan-out
-If a decision is ambiguous, contentious, or strategically heavy, **ask the user first** — before launching the sub-agents. You do not want a sub-agent to write a decision file that then has to be rewritten. Confirm the framing, then fan out. (For a big strategic decision, also consider suggesting a dedicated `/log-decision` pass for more rigor — see PHASE 4.)
+An ambiguous, contentious or strategically heavy decision is confirmed with the user first: afterwards the file would already be written.
 
 ---
 
 ## PHASE 2 — Fan-out (MAIN)
 
-### Golden rule
-**Launch all sub-agents in a SINGLE message** (one message containing N parallel `Agent` tool calls). Never sequentially.
+Launch all sub-agents in **a single message** with N parallel `Agent` tool calls, `subagent_type: general-purpose`. Each owns exactly one target file. A sub-agent sees neither this `SKILL.md` nor any `CLAUDE.md`: its briefing carries the schema, the conventions and the expected wikilinks. Pass it only the transcript lines it needs, as verbatim quotes.
 
-### Sub-agent type
-Always use `subagent_type: general-purpose` (it has Read/Write/Edit/Bash). Each sub-agent owns **exactly one** target file.
+### ⛔ Scope-prohibition block (a required section of EVERY briefing)
 
-### ⛔ Scope-prohibition block (MANDATORY — it is a required section of EVERY briefing)
-
-Every sub-agent is `general-purpose`: if it is not explicitly constrained, it will **expand its own scope** and edit shared/index files → race condition and corrupted catalogs. This is not hypothetical — it is the single most repeatedly-observed failure mode of this skill (see `lessons.md`): parallel sub-agents racing on `INDEX.md` / `hot.md` / `log.md` and overwriting each other's work. Knowing this rule "at the skill level" is **not enough**, because the sub-agent never sees this `SKILL.md` or any `CLAUDE.md`. Therefore you must **paste the block below VERBATIM into every briefing**, right before the "Return format" section:
+Paste it verbatim into every briefing, right before the "Return format" section. An unconstrained sub-agent expands its scope to the shared files, and parallel writes to `INDEX.md`, `hot.md` or `log.md` overwrite each other: it is the most repeatedly observed failure of this skill.
 
 > **SCOPE CONSTRAINTS (non-negotiable)**: Do NOT create or modify ANY file other than the single `Target path` named above. In particular, NEVER touch `INDEX.md`, `decisions/INDEX.md`, `people/INDEX.md`, `WORK/initiatives/INDEX.md` (or any macro-area `initiatives/INDEX.md`), `hot.md`, or `log.md`, and NEVER touch any other person / decision / initiative file. If you discover cross-references that other files should carry, **do NOT apply them** — return them as plain text under the "Cross-references" section of your return, and MAIN will apply them in PHASE 3.
 
-### Briefing template — every briefing has these 7 sections, in order
+### The 7 sections of a briefing, in order
 1. **Goal** — what this sub-agent must produce (its one file).
-2. **Raw extract** — ONLY the transcript lines that matter for this file (verbatim quotes, no paraphrase). The sub-agent must NOT read the whole transcript.
+2. **Raw extract** — only the transcript lines that matter for this file.
 3. **Target path** — the repo-relative path + whether it already exists or must be created.
 4. **Schema** — the complete frontmatter to use/preserve + the expected section structure.
 5. **Wiki conventions** — wikilinks, callouts, English, kebab-case.
-6. **Scope constraints** — the ⛔ block above, VERBATIM. NOT optional (it is the root cause of the near-misses in `lessons.md`).
-7. **Return format** — what to hand back to MAIN (always include "Cross-references to apply: [list]", which MAIN applies in PHASE 3).
+6. **Scope constraints** — the ⛔ block above.
+7. **Return format** — always with "Cross-references to apply: [list]", which MAIN applies in PHASE 3.
 
 > Paths in briefings are repo-relative (e.g. `decisions/...`, `people/...`). If a sub-agent needs an absolute base, give it `${CLAUDE_PROJECT_DIR}` — never a machine-specific path.
 
 ### Briefing template — Decision sub-agent (NEW file)
 
 ```
-Goal: create decisions/YYYY-MM-DD-{topic-slug}.md for the decision "{decision title}" that emerged in the meeting "{meeting title}".
+Goal: create decisions/YYYY-MM-DD-{slug}.md for the decision "{decision title}" that emerged in the meeting "{meeting title}".
 
 Target path: decisions/YYYY-MM-DD-{slug}.md (NEW — does not exist).
 
@@ -282,9 +241,9 @@ context: {macro-area-slug or 'mixed'}
 session-tag: {short session identifier, optional}
 ---
 
-Relevant raw extract:
+Meeting extract:
 ---
-{the whole transcript if <2000 lines, otherwise an executive summary + the relevant sections}
+{the structured summary from PHASE 1: topics, decisions, action items with owners, and the quotes to carry over}
 ---
 
 What to add under "## Meetings / relevant interactions":
@@ -348,55 +307,39 @@ Return format:
 
 ---
 
-## PHASE 3 — Aggregate & finalize (MAIN, sequential)
+## PHASE 3 — Shared files (MAIN, sequential)
 
-After ALL sub-agents complete, collect their returns and proceed.
-
-### 3.0 Verify the fan-out before touching shared files
-Before writing anything shared (especially `log.md`), confirm **every** sub-agent returned success. If one failed, **retry only the failed sub-agent** (re-send its briefing — do NOT relaunch the others, their files are already written). Only continue once all returns are green.
+Starts when **every** sub-agent has returned success. If one failed, retry only that one: the others' files are already written. Wikilinks go only to files that exist (`ls` when unsure).
 
 ### 3.1 Sub-index updates
-Apply the cross-references the sub-agents returned as text, then update each touched sub-index, in order:
+Apply the cross-references the sub-agents returned as text, then update each touched sub-index:
 
-- **`decisions/INDEX.md`** (if N new decisions): add a row in the appropriate topic section's table (the sections reflect the user's own topic clusters — see the file). If a decision supersedes an older one, flip the old row to `superseded`.
-- **`people/INDEX.md`** (if a new person was created): add to the relevant section.
-- **`WORK/initiatives/INDEX.md`** (if an initiative was touched): update `last-updated` in the table + any status change.
-- **`knowledge/INDEX.md`** (rare from a meeting): only if you promoted a pattern.
+- **`decisions/INDEX.md`**, for each new decision: a row at the top of the right topic section's table, with a short title as the label. If a decision supersedes an older one, flip the old row to `superseded`.
+- **`people/INDEX.md`**: a new person gets a row in the relevant section; for a person already listed, update the `Last interaction` date.
+- **`WORK/initiatives/INDEX.md`**, for each initiative touched: update the row, plus any status change. The last cell is a pointer — the status and, at most, the latest source with one sentence, 30 words in all. It is replaced, never appended to: the history is in the page the sub-agent just wrote.
+- **`knowledge/INDEX.md`**: only if you promoted a pattern.
 
 ### 3.2 Root INDEX
-Update `INDEX.md` (root):
-- "Recent raw meetings" section: add an entry with a 1-2 line synthesis + links to the extracted decisions.
-- "Decisions" section (top recent only): if a new decision deserves top-level visibility, include it and push one less important down.
-- Daily section, if you created a new daily.
+`INDEX.md` (root):
+- "Recent raw meetings": the new entry on top, with a 1-line gloss + links to the extracted decisions.
+- "Decisions": only if a new decision belongs among the 5 shown there. One comes in, one goes out.
+- "Daily logs", if the daily is new.
 
-### 3.3 hot.md (full overwrite, ~500 words)
-A meeting is almost ALWAYS a trigger to update `hot.md`. Overwrite it completely (it's a cache, not a journal), keeping its frontmatter:
+Done when `bash .claude/hooks/check-index-caps.sh` prints nothing: it measures the caps of every index touched, and what it reports gets fixed before PHASE 3 closes.
 
-```yaml
----
-type: meta
-description: Hot cache — recent-context digest (~500 words)
-updated: YYYY-MM-DD
----
-```
+### 3.3 hot.md
+Overwrite `hot.md` following `CLAUDE.md` §4bis: the meeting's facts go in place of the oldest ones, and emerging patterns are written to `knowledge/{domain}/hypotheses.md`, with only the link here. In the frontmatter only `updated:` changes, and it holds only the date.
 
-Body, 5 sections, with caps:
-1. **Last Updated** — 1-2 lines: date + tagline.
-2. **Key Recent Facts** — **max 5** strategic bullets with wikilinks, ≤60 words each.
-3. **Recent Changes** — **max 3** bullets: created / updated.
-4. **Active Threads** — **max 4** bullets: action-item rollover + next steps.
-5. **Open Patterns / Hypotheses** — **≤60 words, pointers only** to `knowledge/`: the `n/3` counts live there, never here.
+Done when `wc -w hot.md` gives at most 700. If everything is needed, go over and tell the user how many words and why.
 
-⛔ **The cache replaces, it doesn't accumulate**: the meeting's facts go in **in place of** the oldest ones, not on top. `updated:` is only the date, never a chain of sessions. Before closing PHASE 3: `wc -w hot.md` → **≤ 700 words**, or tell the user how many and why (caps: `CLAUDE.md` §4bis).
-
-### 3.4 log.md (one-line append)
-`log.md` holds **only the current month**. Append **exactly ONE line** under the current month header `## YYYY-MM` (create the header if it's missing). No per-entry header, no multi-line block, no "files touched:" line — the key files/outcome are summarized compactly inside the single line.
+### 3.4 log.md
+Exactly one line under the current month header `## YYYY-MM` (create it if missing), with the time from `date +%H:%M`:
 
 ```
 - YYYY-MM-DD HH:MM · log-meeting · raw/meetings/{file} → {outcome ≤15 words}
 ```
 
-Example:
+The line counts what the meeting produced; quotes and positions live in the daily and in the decisions. Example:
 ```
 - 2026-01-15 16:46 · log-meeting · raw/meetings/2026-01-15-acme-kickoff → 1 dec, +marcus-chen, jane-doe updated, acme-payments-rewrite
 ```
@@ -405,35 +348,9 @@ Example:
 
 ## PHASE 4 — Recap to the user
 
-Short summary in chat:
 - **Decisions created** (wikilink + 1 sentence each)
 - **Initiatives updated** (what changed)
-- **People**: created / updated
-- **hot.md updated**: yes
+- **People**: created / updated, with the names and roles to confirm
 - **Emerging patterns** (knowledge candidates): list + promotion status (1/3, 2/3, 3/3 ready)
 - **Inline callouts applied**: contradiction / gap / key-insight, if any
-- **Suggestion**: "want me to open a `/log-decision` proposal for X?" if a big strategic decision deserves more rigor.
-
----
-
-## Fan-out: cost / benefit
-
-- **Token cost**: the fan-out raises total tokens by ~20-30% (extra round-trips + briefing setup) but cuts the main context by ~70-80% and wall-clock time by ~3-4×.
-- **When NOT to fan out**: a trivial meeting (<15 min, exactly 1 decision, 0 new people) touches a single file — the fan-out is pure overhead. Handle it sequentially in MAIN.
-- **Self-contained briefings**: sub-agents do NOT see this `SKILL.md` or any `CLAUDE.md`. MAIN's briefing MUST carry the schema, conventions, expected wikilinks, and the ⛔ scope-constraints block.
-- **Post-fan-out verification**: see 3.0 — confirm all returns are green before writing `log.md`; retry only failed sub-agents.
-
----
-
-## What NOT to do
-
-- **NEVER** modify the raw transcript.
-- **NEVER** launch sub-agents sequentially — always a single message with parallel calls.
-- **NEVER** let a sub-agent write a shared file (`log.md`, `INDEX.md`, any sub-index, `hot.md`): race condition. This is why the ⛔ scope-constraints block is pasted verbatim into every briefing.
-- **NEVER** pass the whole transcript to a sub-agent when an extract suffices — it wastes the context saving.
-- Do not invent action items — only those actually said.
-- Do not assign arbitrary deadlines if none were mentioned.
-- For controversial / ambiguous decisions: confirm with the user BEFORE the fan-out, not after a sub-agent has already written a decision file.
-- Do not auto-create initiatives: if a new one emerges, suggest `/new-initiative` but don't run it without confirmation.
-- Do not invent cross-references: only wikilink files that EXIST (verify with `ls` if unsure).
-- Do not crystallize an ambiguous name — flag inline with `_(to confirm)_` and ask the user.
+- A big strategic decision that deserves more rigor: propose a `/log-decision` pass.

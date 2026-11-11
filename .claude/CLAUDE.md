@@ -246,7 +246,7 @@ Mandatory on every wiki page. Minimum schema per type:
 ```
 - YYYY-MM-DD HH:MM · {op} · {target} → {outcome ≤15 words}
 ```
-`HH:MM` is copied from the output of `date +%H:%M` run in the session, never estimated.
+`HH:MM` is copied from the output of `date +%H:%M` run in the session, never estimated. The daily written inside `/end-session` has no line of its own: the `session-end` line covers the session.
 
 The *content* of the work lives in `daily/`, `decisions/`, `people/`, `knowledge/`, etc. — `log.md` keeps only the mechanical trace (when · what · on what · outcome).
 
@@ -255,6 +255,8 @@ Same principle as `hot.md` ("it's a cache, not a journal"). **A cap makes you re
 - **`hot.md`**: caps and eviction rule in `../CLAUDE.md` §4bis.
 - **`log.md`** keeps only the **current month**. On month rollover, `/end-session` moves concluded-month entries to `log/YYYY-MM.md` (one file per month).
 - **`INDEX.md`** is a **catalog that links, not one that contains**. Chronological sections (daily, raw meetings, articles) keep only the most recent ~10–14 entries with a link + a 1-line gloss; the full history is browsed from the folder. **Never paste the full content of child files** into the index. The caps (entries per section, gloss length, file size) are measured by `.claude/hooks/check-index-caps.sh` (see "Runtime hooks").
+- **`people/INDEX.md` and every `{macro-area}/initiatives/INDEX.md`** hold one row per page, and the row is a pointer: its last cell keeps status or date, source and one sentence, 30 words at most. An update replaces the cell; the history lives in the page.
+- **`decisions/INDEX.md`** is a full catalog, so it only grows: cap 55 KB. Over the cap the oldest month leaves — `.claude/tools/archive-decisions.py` moves its rows unchanged to `decisions/_archive/INDEX.md`.
 
 ### Updating INDEX.md + sub-index
 Every operation that creates/moves a wiki page **must** update:
@@ -269,7 +271,7 @@ Three hooks automate persistent memory and compaction — executed by the runtim
 
 - **`SessionStart`** (matcher `startup|resume|clear|compact`) → prints `hot.md`, which enters the context at startup, on resume, after `/clear` and after compaction. Gives the model recent context without a manual recap. There is no `PostCompact` hook: its output doesn't enter the context, so the `compact` matcher does that job. Hook output over 10,000 characters becomes a 2,000-character preview: that's why `lessons.md` isn't loaded by a hook but by the `@lessons.md` import in the root `CLAUDE.md`.
 - **`Stop` ①** → if the wiki was modified in the session (new untracked files included) but `hot.md` isn't among the touched files, prints `HOT_CACHE_REMINDER`. After `/end-session` it can still fire on untracked files left out of the commit: a false positive, since `hot.md` is already up to date.
-- **`Stop` ②** → `.claude/hooks/check-index-caps.sh`: if `INDEX.md` was touched in the session (uncommitted, or committed in the last 3 hours), measures entries and gloss length per section and prints `INDEX_CAPS_REMINDER` **with the real numbers** when a cap is exceeded. Silent when compliant. The caps are hardcoded in the script (`cap[...]`, keyed by the `## ` titles of `INDEX.md`): if they change in "Compaction", or a section is renamed, change them there too.
+- **`Stop` ②** → `.claude/hooks/check-index-caps.sh`: for each index touched in the session (uncommitted, or committed in the last 3 hours) it measures the caps and prints `INDEX_CAPS_REMINDER` **with the real numbers** when one is exceeded — entries and gloss length per section of `INDEX.md`, the last cell of each row in `people/INDEX.md` and in every `initiatives/INDEX.md`, the size of `decisions/INDEX.md`. Silent when compliant. The skills that write an index run the same script as the last act of that step, because a `Stop` hook's output doesn't reach the model. The caps are hardcoded in the script (`cap[...]`, keyed by the `## ` titles of `INDEX.md`): if they change in "Compaction", or a section is renamed, change them there too.
 
 The `Stop` hooks measure, they don't block (no `exit 2`). Their output does **not** reach the model: for a `Stop` hook that exits 0, Claude Code writes stdout to the debug log only. Making it reach the model takes JSON output (`hookSpecificOutput.additionalContext`), which also gives the model another turn.
 
